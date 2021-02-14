@@ -1,7 +1,8 @@
 import Foundation
 import Fluent
+import Vapor
 
-final class Project: Model {
+final class Project: Model, Content {
 	enum Status: String, Codable {
 		case active, onHold
 	}

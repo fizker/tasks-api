@@ -1,7 +1,8 @@
 import Foundation
 import Fluent
+import Vapor
 
-final class Task: Model {
+final class Task: Model, Content {
 	enum Status: String, Codable {
 		case notStarted, done
 	}

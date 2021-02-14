@@ -1,6 +1,20 @@
 import Fluent
 import Vapor
 
+func notImplemented() -> Never {
+	fatalError("not implemented")
+}
+
+extension Request {
+	func require(_ name: String) throws -> UUID {
+		guard
+			let strID = parameters.get("id"),
+			let id = UUID(uuidString: strID)
+		else { throw Vapor.Abort(.badRequest) }
+		return id
+	}
+}
+
 func routes(_ app: Application) throws {
 	app.get { req in
 		return "It works!"
@@ -8,5 +22,25 @@ func routes(_ app: Application) throws {
 
 	app.get("hello") { req -> String in
 		return "Hello, world!"
+	}
+
+	let p = ProjectController()
+	let t = TaskController()
+
+	app.group("projects") { app in
+		app.get(use: p.all(req:))
+		app.post(use: p.create(req:))
+
+		app.group(":project") { app in
+			app.get { p.get(req: $0, id: try $0.parameters.require("project")) }
+			app.put { try p.update(req: $0, id: try $0.parameters.require("project")) }
+			app.delete { p.delete(req: $0, id: try $0.parameters.require("project")) }
+
+			app.group("tasks") { app in
+				app.get { t.all(req: $0, projectID: try $0.parameters.require("project")) }
+				app.post { try t.create(req: $0, projectID: try $0.parameters.require("project")) }
+				app.delete(":task") { t.delete(req: $0, projectID: try $0.parameters.require("project"), id: try $0.parameters.require("task")) }
+			}
+		}
 	}
 }
