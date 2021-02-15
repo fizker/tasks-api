@@ -6,13 +6,7 @@ struct CreateProject: Migration {
 			.id()
 			.field("name", .string, .required)
 			.field("description", .string, .required)
-			.field(
-				"status",
-				.enum(.init(
-					name: "project_status",
-					cases: ["active", "onHold"]
-				)),
-				.required)
+			.field("status", .string, .required)
 			.create()
 	}
 

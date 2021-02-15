@@ -18,6 +18,8 @@ public func configure(_ app: Application) throws {
 	app.migrations.add(CreateProject())
 	app.migrations.add(CreateTask())
 
+	try app.autoMigrate().wait()
+
 	// register routes
 	try routes(app)
 }

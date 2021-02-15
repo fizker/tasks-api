@@ -7,14 +7,7 @@ struct CreateTask: Migration {
 			.field("name", .string, .required)
 			.field("project", .uuid, .required, .references(Project.schema, "id"))
 			.field("description", .string, .required)
-			.field(
-				"status",
-				.enum(.init(
-					name: "task_status",
-					cases: ["notStarted", "done"]
-				)),
-				.required
-			)
+			.field("status", .string, .required)
 			.create()
 	}
 
