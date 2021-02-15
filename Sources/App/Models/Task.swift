@@ -2,10 +2,8 @@ import Foundation
 import Fluent
 import Vapor
 
-final class Task: Model, Content {
-	enum Status: String, Codable {
-		case notStarted, done
-	}
+final class Task: Model {
+	typealias Status = TaskDTO.Status
 
 	static let schema = "tasks"
 
@@ -32,5 +30,34 @@ final class Task: Model, Content {
 		self.descr = description
 		self.status = status
 		self.$project.id = try project.requireID()
+	}
+}
+
+extension TaskDTO: Content {
+}
+
+extension TaskDTO {
+	init(_ task: Task) {
+		self.id = task.id
+		self.name = task.name
+		self.descr = task.descr
+		self.status = task.status
+		self.project = task.$project.id
+	}
+
+	func copy(onto task: Task) {
+		task.id = id
+		task.name = name
+		task.descr = descr
+		task.status = status ?? .notStarted
+		if let project = project {
+			task.$project.id = project
+		}
+	}
+
+	var taskValue: Task {
+		let t = Task()
+		copy(onto: t)
+		return t
 	}
 }

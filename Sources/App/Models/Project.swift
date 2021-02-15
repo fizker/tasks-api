@@ -2,10 +2,8 @@ import Foundation
 import Fluent
 import Vapor
 
-final class Project: Model, Content {
-	enum Status: String, Codable {
-		case active, onHold
-	}
+final class Project: Model {
+	typealias Status = ProjectDTO.Status
 
 	static let schema = "projects"
 
@@ -31,5 +29,34 @@ final class Project: Model, Content {
 		self.name = name
 		self.descr = description
 		self.status = status
+	}
+}
+
+extension ProjectDTO: Content {
+}
+
+extension ProjectDTO {
+	init(_ project: Project) {
+		self.id = project.id
+		self.name = project.name
+		self.descr = project.descr
+		self.status = project.status
+		self.tasks = project.$tasks.value?.map(TaskDTO.init(_:))
+	}
+
+	func copy(onto project: Project) {
+		project.id = id
+		project.name = name
+		project.descr = descr
+		project.status = status ?? .active
+		if let tasks = tasks {
+			project.tasks = tasks.map(\.taskValue)
+		}
+	}
+
+	var projectValue: Project {
+		let p = Project()
+		copy(onto: p)
+		return p
 	}
 }

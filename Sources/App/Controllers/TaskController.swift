@@ -2,23 +2,24 @@ import Fluent
 import Vapor
 
 class TaskController {
-	func all(req: Request, projectID: UUID) -> EventLoopFuture<[Task]> {
-		return Task.query(on: req.db).all()
+	func all(req: Request, projectID: UUID) -> EventLoopFuture<[TaskDTO]> {
+		return Task.query(on: req.db).all().map { $0.map(TaskDTO.init) }
 	}
 
-	func create(req: Request, projectID: UUID) throws -> EventLoopFuture<Task> {
-		let task = try req.content.decode(Task.self)
-		task.$project.id = projectID
-		return task.save(on: req.db).map { task }
+	func create(req: Request, projectID: UUID) throws -> EventLoopFuture<TaskDTO> {
+		var dto = try req.content.decode(TaskDTO.self)
+		dto.project = projectID
+		let task = dto.taskValue
+		return task.save(on: req.db).map { TaskDTO(task) }
 	}
 
-	func get(req: Request, projectID: UUID, id: UUID) -> EventLoopFuture<Task> {
+	func get(req: Request, projectID: UUID, id: UUID) -> EventLoopFuture<TaskDTO> {
 		return Task.find(id, on: req.db)
 			.unwrap(or: Abort(.notFound))
-			.flatMapThrowing { task throws -> Task in
+			.flatMapThrowing { task throws -> TaskDTO in
 				guard task.$project.id == projectID
 				else { throw Abort(.notFound) }
-				return task
+				return TaskDTO(task)
 			}
 	}
 
