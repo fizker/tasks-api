@@ -26,6 +26,7 @@ func routes(_ app: Application) throws {
 
 	let p = ProjectController()
 	let t = TaskController()
+	let todo = TodoController()
 
 	app.group("projects") { app in
 		app.get(use: p.all(req:))
@@ -42,5 +43,9 @@ func routes(_ app: Application) throws {
 				app.delete(":task") { t.delete(req: $0, projectID: try $0.parameters.require("project"), id: try $0.parameters.require("task")) }
 			}
 		}
+	}
+
+	app.group("todo") { app in
+		app.get(use: todo.next(req:))
 	}
 }
