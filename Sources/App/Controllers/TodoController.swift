@@ -5,7 +5,7 @@ extension TodoDTO: Content {
 }
 
 class TodoController {
-	func next(req: Request) -> EventLoopFuture<TodoDTO> {
+	func currentItem(req: Request) -> EventLoopFuture<TodoDTO> {
 		let projects = Project.query(on: req.db).all()
 		let settings = TodoSettings.query(on: req.db).first()
 
@@ -31,5 +31,36 @@ class TodoController {
 			.map { (task, project) in
 				TodoDTO(project: ProjectDTO(project), task: task.map(TaskDTO.init))
 			}
+	}
+
+	func moveToNextItem(req: Request) throws -> EventLoopFuture<TodoDTO> {
+		let settings = TodoSettings.query(on: req.db).first()
+			.map { $0 ?? TodoSettings() }
+		let projects = Project.query(on: req.db).all()
+
+		return settings.and(projects)
+			.flatMap { (settings, projects) in
+				let project: Project
+				if let id = settings.$currentProject.id {
+					let index = projects.firstIndex { $0.id == id } ?? 0
+
+					if index < projects.count {
+						project = projects[index]
+					} else {
+						project = projects[0]
+					}
+				} else if let p = projects.dropFirst().first {
+					project = p
+				} else if let p = projects.first {
+					project = p
+				} else {
+					notImplemented()
+				}
+
+				settings.currentProject = project
+
+				return settings.save(on: req.db)
+			}
+			.flatMap { self.currentItem(req: req) }
 	}
 }

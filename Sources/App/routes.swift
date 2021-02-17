@@ -46,6 +46,7 @@ func routes(_ app: Application) throws {
 	}
 
 	app.group("todo") { app in
-		app.get(use: todo.next(req:))
+		app.get(use: todo.currentItem(req:))
+		app.post(use: todo.moveToNextItem(req:))
 	}
 }
