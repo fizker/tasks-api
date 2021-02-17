@@ -23,8 +23,8 @@ class TaskController {
 			}
 	}
 
-	func update(req: Request, projectID: UUID, id: UUID) -> Response {
-		notImplemented()
+	func update(req: Request, projectID: UUID, id: UUID) throws -> Response {
+		try notImplemented()
 	}
 
 	func delete(req: Request, projectID: UUID, id: UUID) -> EventLoopFuture<HTTPStatus> {

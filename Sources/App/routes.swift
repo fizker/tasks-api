@@ -1,8 +1,8 @@
 import Fluent
 import Vapor
 
-func notImplemented() -> Never {
-	fatalError("not implemented")
+func notImplemented() throws -> Never {
+	throw Abort(.notImplemented)
 }
 
 extension Request {
