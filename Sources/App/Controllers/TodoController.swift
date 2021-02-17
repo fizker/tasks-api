@@ -43,9 +43,10 @@ class TodoController {
 				let project: Project
 				if let id = settings.$currentProject.id {
 					let index = projects.firstIndex { $0.id == id } ?? 0
+					let nextIndex = index + 1
 
-					if index < projects.count {
-						project = projects[index]
+					if nextIndex < projects.count {
+						project = projects[nextIndex]
 					} else {
 						project = projects[0]
 					}
@@ -57,7 +58,7 @@ class TodoController {
 					notImplemented()
 				}
 
-				settings.currentProject = project
+				settings.$currentProject.id = project.id
 
 				return settings.save(on: req.db)
 			}
