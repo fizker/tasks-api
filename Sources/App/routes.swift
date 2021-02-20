@@ -40,7 +40,11 @@ func routes(_ app: Application) throws {
 			app.group("tasks") { app in
 				app.get { t.all(req: $0, projectID: try $0.parameters.require("project")) }
 				app.post { try t.create(req: $0, projectID: try $0.parameters.require("project")) }
-				app.delete(":task") { t.delete(req: $0, projectID: try $0.parameters.require("project"), id: try $0.parameters.require("task")) }
+				app.group(":task") { app in
+					app.get { t.get(req: $0, projectID: try $0.parameters.require("project"), id: try $0.parameters.require("task")) }
+					app.put { try t.update(req: $0, projectID: try $0.parameters.require("project"), id: try $0.parameters.require("task")) }
+					app.delete { t.delete(req: $0, projectID: try $0.parameters.require("project"), id: try $0.parameters.require("task")) }
+				}
 			}
 		}
 	}
