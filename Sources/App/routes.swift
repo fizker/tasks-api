@@ -1,8 +1,8 @@
 import Fluent
 import Vapor
 
-func notImplemented() -> Never {
-	fatalError("not implemented")
+func notImplemented() throws -> Never {
+	throw Abort(.notImplemented)
 }
 
 extension Request {
@@ -26,6 +26,7 @@ func routes(_ app: Application) throws {
 
 	let p = ProjectController()
 	let t = TaskController()
+	let todo = TodoController()
 
 	app.group("projects") { app in
 		app.get(use: p.all(req:))
@@ -42,5 +43,10 @@ func routes(_ app: Application) throws {
 				app.delete(":task") { t.delete(req: $0, projectID: try $0.parameters.require("project"), id: try $0.parameters.require("task")) }
 			}
 		}
+	}
+
+	app.group("todo") { app in
+		app.get(use: todo.currentItem(req:))
+		app.post(use: todo.moveToNextItem(req:))
 	}
 }

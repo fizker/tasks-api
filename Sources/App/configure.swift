@@ -15,8 +15,9 @@ public func configure(_ app: Application) throws {
 		database: Environment.get("DATABASE_NAME") ?? "vapor_database"
 	), as: .psql)
 
-	app.migrations.add(CreateProject())
-	app.migrations.add(CreateTask())
+	for migration in migrations {
+		app.migrations.add(migration())
+	}
 
 	try app.autoMigrate().wait()
 
