@@ -23,8 +23,39 @@ class TaskController {
 			}
 	}
 
-	func update(req: Request, projectID: UUID, id: UUID) throws -> Response {
-		try notImplemented()
+	func update(req: Request, projectID: UUID, id: UUID) throws -> EventLoopFuture<TaskDTO> {
+		var dto = try req.content.decode(TaskDTO.self)
+		dto.id = id
+		dto.project = projectID
+
+		let nextSort: EventLoopFuture<Int>
+		if let sortOrder = dto.sortOrder {
+			nextSort = Task.query(on: req.db)
+				.filter(\.$sortOrder >= sortOrder)
+				.filter(\.$id != id)
+				.all()
+				.flatMap {
+					var sort = sortOrder + 1
+					let updates = $0.map { task -> EventLoopFuture<Void> in
+						task.sortOrder = sort
+						sort += 1
+						return task.save(on: req.db)
+					}
+					return EventLoopFuture.andAllSucceed(updates, on: req.eventLoop.next())
+						.transform(to: sortOrder)
+				}
+		} else {
+			nextSort = Task.query(on: req.db)
+				.max(\.$sortOrder)
+				.unwrap(orReplace: 1)
+		}
+
+		return nextSort.flatMap {
+			dto.sortOrder = $0
+			let task = dto.taskValue
+			return task.save(on: req.db)
+				.transform(to: TaskDTO(task))
+		}
 	}
 
 	func delete(req: Request, projectID: UUID, id: UUID) -> EventLoopFuture<HTTPStatus> {
