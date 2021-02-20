@@ -3,7 +3,10 @@ import Vapor
 
 class TaskController {
 	func all(req: Request, projectID: UUID) -> EventLoopFuture<[TaskDTO]> {
-		return Task.query(on: req.db).all().map { $0.map(TaskDTO.init) }
+		return Task.query(on: req.db)
+			.filter(\.$project.$id == projectID)
+			.all()
+			.map { $0.map(TaskDTO.init) }
 	}
 
 	func create(req: Request, projectID: UUID) throws -> EventLoopFuture<TaskDTO> {
@@ -33,6 +36,7 @@ class TaskController {
 			nextSort = Task.query(on: req.db)
 				.filter(\.$sortOrder >= sortOrder)
 				.filter(\.$id != id)
+				.filter(\.$project.$id == projectID)
 				.all()
 				.flatMap {
 					var sort = sortOrder + 1
@@ -46,6 +50,7 @@ class TaskController {
 				}
 		} else {
 			nextSort = Task.query(on: req.db)
+				.filter(\.$project.$id == projectID)
 				.max(\.$sortOrder)
 				.unwrap(orReplace: 1)
 		}
