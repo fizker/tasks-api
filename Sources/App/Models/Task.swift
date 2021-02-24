@@ -19,17 +19,21 @@ final class Task: Model {
 	@Field(key: "status")
 	var status: Status
 
+	@Field(key: "sort_order")
+	var sortOrder: Int
+
 	@Parent(key: "project")
 	var project: Project
 
 	init() {}
 
-	init(id: UUID? = nil, project: Project, name: String, status: Status = .notStarted, description: String) throws {
+	init(id: UUID? = nil, project: Project, name: String, status: Status = .notStarted, description: String, sortOrder: Int) throws {
 		self.id = id
 		self.name = name
 		self.descr = description
 		self.status = status
 		self.$project.id = try project.requireID()
+		self.sortOrder = sortOrder
 	}
 }
 
@@ -43,6 +47,7 @@ extension TaskDTO {
 		self.descr = task.descr
 		self.status = task.status
 		self.project = task.$project.id
+		self.sortOrder = task.sortOrder
 	}
 
 	func copy(onto task: Task) {
@@ -52,6 +57,9 @@ extension TaskDTO {
 		task.status = status ?? .notStarted
 		if let project = project {
 			task.$project.id = project
+		}
+		if let sortOrder = sortOrder {
+			task.sortOrder = sortOrder
 		}
 	}
 

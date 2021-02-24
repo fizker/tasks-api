@@ -25,6 +25,7 @@ class TodoController {
 				Task.query(on: req.db)
 					.filter(\.$project.$id == project.id!)
 					.filter(\.$status != .done)
+					.sort(\.$sortOrder, .ascending)
 					.first()
 					.and(value: project)
 			}
