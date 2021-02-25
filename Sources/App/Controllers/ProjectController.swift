@@ -30,8 +30,12 @@ class ProjectController {
 	func update(req: Request, id: UUID) throws -> EventLoopFuture<ProjectDTO> {
 		var dto = try req.content.decode(ProjectDTO.self)
 		dto.id = id
-		let project = dto.projectValue
-		return project.update(on: req.db)
+		return Project.find(id, on: req.db)
+			.unwrap(or: Abort(.notFound))
+			.flatMap { project in
+				dto.copy(onto: project)
+				return project.update(on: req.db)
+			}
 			.flatMap { self.loadSingle(id: id, on: req.db) }
 	}
 
