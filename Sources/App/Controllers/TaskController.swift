@@ -81,7 +81,7 @@ class TaskController {
 					.and(self.updateSortOrder(database: req.db, projectID: projectID, sortUpdate: .deleteExisting(old: task.sortOrder)))
 					.transform(to: ())
 			}
-			.transform(to: .ok)
+			.transform(to: .noContent)
 	}
 
 	private func nextSort(database: Database, projectID: UUID) -> EventLoopFuture<Int> {

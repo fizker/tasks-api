@@ -43,6 +43,6 @@ class ProjectController {
 		return Project.find(id, on: req.db)
 			.unwrap(or: Abort(.notFound))
 			.flatMap { $0.delete(on: req.db) }
-			.transform(to: .ok)
+			.transform(to: .noContent)
 	}
 }
