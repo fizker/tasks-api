@@ -4,13 +4,13 @@ import PackageDescription
 let package = Package(
 	name: "tasks",
 	platforms: [
-		.macOS(.v10_15),
+		.macOS(.v12),
 	],
 	dependencies: [
 		// 💧 A server-side Swift web framework.
-		.package(url: "https://github.com/vapor/vapor.git", from: "4.48.8"),
-		.package(url: "https://github.com/vapor/fluent.git", from: "4.3.1"),
-		.package(url: "https://github.com/vapor/fluent-postgres-driver.git", from: "2.2.0"),
+		.package(url: "https://github.com/vapor/vapor.git", from: "4.55.2"),
+		.package(url: "https://github.com/vapor/fluent.git", from: "4.4.0"),
+		.package(url: "https://github.com/vapor/fluent-postgres-driver.git", from: "2.2.3"),
 	],
 	targets: [
 		.target(
