@@ -23,20 +23,53 @@ class ProjectController {
 			.map(ProjectDTO.init(_:))
 	}
 
+	func loadSingle(id: UUID, on db: Database) async throws -> ProjectDTO {
+		let future = loadSingle(id: id, on: db) as EventLoopFuture<ProjectDTO>
+		return try await future.get()
+	}
+
 	func get(req: Request, id: UUID) -> EventLoopFuture<ProjectDTO> {
 		loadSingle(id: id, on: req.db)
 	}
 
-	func update(req: Request, id: UUID) throws -> EventLoopFuture<ProjectDTO> {
-		var dto = try req.content.decode(ProjectDTO.self)
+	func update(req: Request, id: UUID) async throws -> ProjectDTO {
+		let dto = try req.content.decode(ProjectDTO.self)
+		return try await update(id: id, dto: dto, db: req.db)
+	}
+
+	func update(id: UUID, dto: ProjectDTO, db: Database) async throws -> ProjectDTO {
+		var dto = dto
 		dto.id = id
-		return Project.find(id, on: req.db)
-			.unwrap(or: Abort(.notFound))
-			.flatMap { project in
-				dto.copy(onto: project)
-				return project.update(on: req.db)
+
+		guard let project = try await Project.find(id, on: db)
+		else { throw Abort(.notFound) }
+
+		dto.copy(onto: project)
+		try await project.update(on: db)
+
+		let taskController = TaskController()
+		let currentTasks = try await taskController.all(db: db, projectID: id)
+			.get()
+		let tasksToUpdate = dto.tasks ?? []
+		for task in currentTasks {
+			guard let taskID = task.id
+			else { continue }
+
+			if !tasksToUpdate.contains(where: { $0.id == taskID }) {
+				try await taskController.delete(db: db, projectID: id, id: taskID)
 			}
-			.flatMap { self.loadSingle(id: id, on: req.db) }
+		}
+		for task in tasksToUpdate {
+			if let taskID = currentTasks.first(where: { $0.id == task.id })?.id {
+				_ = try await taskController.update(db: db, dto: task, projectID: id, id: taskID)
+					.get()
+			} else {
+				_ = try await taskController.create(db: db, dto: task, projectID: id)
+					.get()
+			}
+		}
+
+		return try await self.loadSingle(id: id, on: db)
 	}
 
 	func delete(req: Request, id: UUID) -> EventLoopFuture<HTTPStatus> {

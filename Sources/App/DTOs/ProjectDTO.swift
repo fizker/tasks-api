@@ -1,6 +1,6 @@
 import Foundation
 
-struct ProjectDTO: Codable {
+struct ProjectDTO: Codable, Equatable {
 	enum CodingKeys: String, CodingKey {
 		case id, name, descr = "description", status, tasks
 	}
