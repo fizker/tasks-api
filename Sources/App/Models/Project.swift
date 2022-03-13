@@ -49,9 +49,7 @@ extension ProjectDTO {
 		project.name = name
 		project.descr = descr
 		project.status = status ?? .active
-		if let tasks = tasks {
-			project.tasks = tasks.map(\.taskValue)
-		}
+		project.$tasks.value = tasks?.map(\.taskValue)
 	}
 
 	var projectValue: Project {
