@@ -8,6 +8,7 @@ final class ProjectControllerTests: XCTestCase {
 
 	func test__loadSingle__projectDoesNotExist__throwsNotFound() async throws {
 		let projectID = UUID()
+		try await addProject(id: UUID())
 
 		do {
 			_ = try await controller.loadSingle(id: projectID, on: app.db)
@@ -19,6 +20,24 @@ final class ProjectControllerTests: XCTestCase {
 				XCTFail("Unexpected error: \(error)")
 			}
 		}
+	}
+
+	func test__loadSingle__projectExists__projectIsReturned() async throws {
+		let projectID = UUID()
+		try await addProject(id: projectID)
+
+		let project = try await controller.loadSingle(id: projectID, on: app.db)
+		XCTAssertEqual(projectID, project.id)
+	}
+
+	private func addProject(id: UUID) async throws {
+		let project = ProjectDTO(
+			id: id,
+			name: "Test project",
+			descr: "Test project description"
+		)
+
+		try await project.projectValue.save(on: app.db)
 	}
 
 	override func tearDownWithError() throws {
