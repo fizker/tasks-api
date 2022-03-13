@@ -7,6 +7,8 @@ FROM swiftlang/swift:nightly-5.6-focal as build
 RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true \
 	&& apt-get -q update \
 	&& apt-get -q dist-upgrade -y \
+	&& apt-get install \
+		libsqlite3-dev \
 	&& rm -rf /var/lib/apt/lists/*
 
 # Set up a build area
@@ -42,8 +44,10 @@ RUN [ -d /build/Resources ] && { mv /build/Resources ./Resources && chmod -R a-w
 FROM swiftlang/swift:nightly-5.6-focal
 
 # Make sure all system packages are up to date.
-RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true && \
-	apt-get -q update && apt-get -q dist-upgrade -y && rm -r /var/lib/apt/lists/*
+RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true \
+	&& apt-get -q update \
+	&& apt-get -q dist-upgrade -y \
+	&& rm -r /var/lib/apt/lists/*
 
 # Create a vapor user and group with /app as its home directory
 RUN useradd --user-group --create-home --system --skel /dev/null --home-dir /app vapor
