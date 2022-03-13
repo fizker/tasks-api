@@ -94,6 +94,48 @@ final class ProjectControllerTests: XCTestCase {
 		XCTAssertEqual(result, single)
 	}
 
+	func test__update__projectExists_projectHasTasks_dtoHasUpdatedTasks__projectIsUpdated_tasksAreUpdated() async throws {
+		let projectID = UUID()
+		let task1ID = UUID()
+		let task2ID = UUID()
+		let task3ID = UUID()
+		try await addProject(id: projectID, tasks: [
+			.init(id: task1ID, name: "foo", descr: "foo d", sortOrder: 1),
+			.init(id: task2ID, name: "bar", descr: "bar d", sortOrder: 2),
+			.init(id: task3ID, name: "baz", descr: "baz d", sortOrder: 3),
+		])
+
+		let dto = ProjectDTO(
+			name: "Updated",
+			descr: "Updated description", tasks: [
+			.init(name: "new", descr: "new d", sortOrder: 1),
+			.init(id: task1ID, name: "foo foo", descr: "foo d", sortOrder: 2),
+			.init(id: task3ID, name: "baz", descr: "baz baz d", sortOrder: 3),
+			]
+		)
+
+		let result = try await controller.update(id: projectID, dto: dto, db: app.db)
+
+		XCTAssertEqual(result.id, projectID)
+		XCTAssertEqual(result.name, dto.name)
+		XCTAssertEqual(result.descr, dto.descr)
+		XCTAssertEqual(result.tasks?.sorted().map { t -> TaskDTO in
+			var t = t
+			t.id = nil
+			return t
+		}, dto.tasks?.sorted().map {
+			var t = $0
+			t.id = nil
+			t.project = projectID
+			t.status = .notStarted
+			return t
+		})
+
+		let single = try await controller.loadSingle(id: projectID, on: app.db)
+
+		XCTAssertEqual(result, single)
+	}
+
 	func test__update__projectExists_projectHasTasks_dtoHasNoTasks__projectIsUpdated_tasksAreRemoved() async throws {
 		let projectID = UUID()
 		try await addProject(id: projectID, tasks: [
