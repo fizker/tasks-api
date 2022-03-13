@@ -46,6 +46,20 @@ class ProjectController {
 
 		dto.copy(onto: project)
 		try await project.update(on: db)
+
+		let taskController = TaskController()
+		let currentTasks = try await taskController.all(db: db, projectID: id)
+			.get()
+		let tasksToUpdate = dto.tasks ?? []
+		for task in currentTasks {
+			guard let taskID = task.id
+			else { continue }
+
+			if !tasksToUpdate.contains(where: { $0.id == taskID }) {
+				try await taskController.delete(db: db, projectID: id, id: taskID)
+			}
+		}
+
 		return try await self.loadSingle(id: id, on: db)
 	}
 

@@ -3,7 +3,11 @@ import Vapor
 
 class TaskController {
 	func all(req: Request, projectID: UUID) -> EventLoopFuture<[TaskDTO]> {
-		return Task.query(on: req.db)
+		return all(db: req.db, projectID: projectID)
+	}
+
+	func all(db: Database, projectID: UUID) -> EventLoopFuture<[TaskDTO]> {
+		return Task.query(on: db)
 			.filter(\.$project.$id == projectID)
 			.sort(\.$sortOrder, .ascending)
 			.all()
@@ -71,17 +75,18 @@ class TaskController {
 		}
 	}
 
-	func delete(req: Request, projectID: UUID, id: UUID) -> EventLoopFuture<HTTPStatus> {
-		return Task.find(id, on: req.db)
-			.unwrap(or: Abort(.notFound))
-			.flatMapThrowing { task throws -> EventLoopFuture<Void> in
-				guard task.$project.id == projectID
-				else { throw Abort(.notFound) }
-				return task.delete(on: req.db)
-					.and(self.updateSortOrder(database: req.db, projectID: projectID, sortUpdate: .deleteExisting(old: task.sortOrder)))
-					.transform(to: ())
-			}
-			.transform(to: .noContent)
+	func delete(req: Request, projectID: UUID, id: UUID) async throws -> HTTPStatus {
+		try await delete(db: req.db, projectID: projectID, id: id)
+		return .noContent
+	}
+
+	func delete(db: Database, projectID: UUID, id: UUID) async throws {
+		guard let task = try await Task.find(id, on: db), task.$project.id == projectID
+		else { throw Abort(.notFound) }
+
+		try await task.delete(on: db)
+		try await updateSortOrder(database: db, projectID: projectID, sortUpdate: .deleteExisting(old: task.sortOrder))
+			.get()
 	}
 
 	private func nextSort(database: Database, projectID: UUID) -> EventLoopFuture<Int> {
