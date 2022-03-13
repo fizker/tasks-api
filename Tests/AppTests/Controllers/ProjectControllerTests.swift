@@ -30,6 +30,27 @@ final class ProjectControllerTests: XCTestCase {
 		XCTAssertEqual(projectID, project.id)
 	}
 
+	func test__update__projectExists_projectHasNoTasks_dtoHasNoTasks__projectIsUpdated() async throws {
+		let projectID = UUID()
+		try await addProject(id: projectID)
+
+		let dto = ProjectDTO(
+			name: "Updated",
+			descr: "Updated description"
+		)
+
+		let result = try await controller.update(id: projectID, dto: dto, db: app.db)
+
+		XCTAssertEqual(result.id, projectID)
+		XCTAssertEqual(result.name, dto.name)
+		XCTAssertEqual(result.descr, dto.descr)
+		XCTAssertEqual(result.tasks?.isEmpty, true)
+
+		let single = try await controller.loadSingle(id: projectID, on: app.db)
+
+		XCTAssertEqual(result, single)
+	}
+
 	private func addProject(id: UUID) async throws {
 		let project = ProjectDTO(
 			id: id,

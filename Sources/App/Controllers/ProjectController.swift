@@ -32,16 +32,21 @@ class ProjectController {
 		loadSingle(id: id, on: req.db)
 	}
 
-	func update(req: Request, id: UUID) throws -> EventLoopFuture<ProjectDTO> {
-		var dto = try req.content.decode(ProjectDTO.self)
+	func update(req: Request, id: UUID) async throws -> ProjectDTO {
+		let dto = try req.content.decode(ProjectDTO.self)
+		return try await update(id: id, dto: dto, db: req.db)
+	}
+
+	func update(id: UUID, dto: ProjectDTO, db: Database) async throws -> ProjectDTO {
+		var dto = dto
 		dto.id = id
-		return Project.find(id, on: req.db)
-			.unwrap(or: Abort(.notFound))
-			.flatMap { project in
-				dto.copy(onto: project)
-				return project.update(on: req.db)
-			}
-			.flatMap { self.loadSingle(id: id, on: req.db) }
+
+		guard let project = try await Project.find(id, on: db)
+		else { throw Abort(.notFound) }
+
+		dto.copy(onto: project)
+		try await project.update(on: db)
+		return try await self.loadSingle(id: id, on: db)
 	}
 
 	func delete(req: Request, id: UUID) -> EventLoopFuture<HTTPStatus> {
