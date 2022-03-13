@@ -23,6 +23,11 @@ class ProjectController {
 			.map(ProjectDTO.init(_:))
 	}
 
+	func loadSingle(id: UUID, on db: Database) async throws -> ProjectDTO {
+		let future = loadSingle(id: id, on: db) as EventLoopFuture<ProjectDTO>
+		return try await future.get()
+	}
+
 	func get(req: Request, id: UUID) -> EventLoopFuture<ProjectDTO> {
 		loadSingle(id: id, on: req.db)
 	}
