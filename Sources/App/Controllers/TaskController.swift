@@ -15,22 +15,25 @@ class TaskController {
 	}
 
 	func create(req: Request, projectID: UUID) throws -> EventLoopFuture<TaskDTO> {
-		var dto = try req.content.decode(TaskDTO.self)
+		let dto = try req.content.decode(TaskDTO.self)
+		return create(db: req.db, dto: dto, projectID: projectID)
+	}
+	func create(db: Database, dto: TaskDTO, projectID: UUID) -> EventLoopFuture<TaskDTO> {
+		var dto = dto
 		dto.project = projectID
 
 		let nextSort: EventLoopFuture<Int>
-		let database = req.db
 		if let sortOrder = dto.sortOrder {
-			nextSort = updateSortOrder(database: database, projectID: projectID, sortUpdate: .insertNew(new: sortOrder))
+			nextSort = updateSortOrder(database: db, projectID: projectID, sortUpdate: .insertNew(new: sortOrder))
 				.transform(to: sortOrder)
 		} else {
-			nextSort = self.nextSort(database: database, projectID: projectID)
+			nextSort = self.nextSort(database: db, projectID: projectID)
 		}
 		return nextSort
 			.flatMap {
 				dto.sortOrder = $0
 				let task = dto.taskValue
-				return task.save(on: req.db)
+				return task.save(on: db)
 					.map { TaskDTO(task) }
 			}
 	}
@@ -46,11 +49,15 @@ class TaskController {
 	}
 
 	func update(req: Request, projectID: UUID, id: UUID) throws -> EventLoopFuture<TaskDTO> {
-		var dto = try req.content.decode(TaskDTO.self)
+		let dto = try req.content.decode(TaskDTO.self)
+		return try update(db: req.db, dto: dto, projectID: projectID, id: id)
+	}
+	func update(db: Database, dto: TaskDTO, projectID: UUID, id: UUID) throws -> EventLoopFuture<TaskDTO> {
+		var dto = dto
 		dto.id = id
 		dto.project = projectID
 
-		return req.db.transaction { database in
+		return db.transaction { database in
 		return Task.find(id, on: database)
 			.unwrap(or: Abort(.notFound))
 			.flatMap { task in

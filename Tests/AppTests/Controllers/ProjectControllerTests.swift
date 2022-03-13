@@ -77,7 +77,17 @@ final class ProjectControllerTests: XCTestCase {
 		XCTAssertEqual(result.id, projectID)
 		XCTAssertEqual(result.name, dto.name)
 		XCTAssertEqual(result.descr, dto.descr)
-		XCTAssertEqual(result.tasks, dto.tasks)
+		XCTAssertEqual(result.tasks?.map { t -> TaskDTO in
+			var t = t
+			t.id = nil
+			t.sortOrder = nil
+			return t
+		}, dto.tasks?.map {
+			var t = $0
+			t.project = projectID
+			t.status = .notStarted
+			return t
+		})
 
 		let single = try await controller.loadSingle(id: projectID, on: app.db)
 

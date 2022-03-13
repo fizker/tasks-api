@@ -59,6 +59,15 @@ class ProjectController {
 				try await taskController.delete(db: db, projectID: id, id: taskID)
 			}
 		}
+		for task in tasksToUpdate {
+			if let taskID = currentTasks.first(where: { $0.id == task.id })?.id {
+				_ = try await taskController.update(db: db, dto: task, projectID: id, id: taskID)
+					.get()
+			} else {
+				_ = try await taskController.create(db: db, dto: task, projectID: id)
+					.get()
+			}
+		}
 
 		return try await self.loadSingle(id: id, on: db)
 	}
