@@ -10,16 +10,7 @@ final class ProjectControllerTests: XCTestCase {
 		let projectID = UUID()
 		try await addProject(id: UUID())
 
-		do {
-			_ = try await controller.loadSingle(id: projectID, on: app.db)
-			XCTFail("Should have thrown")
-		} catch {
-			if let error = error as? AbortError {
-				XCTAssertEqual(error.status, .notFound)
-			} else {
-				XCTFail("Unexpected error: \(error)")
-			}
-		}
+		await XCTAssertThrowsAbortError(.notFound, try await controller.loadSingle(id: projectID, on: app.db))
 	}
 
 	func test__loadSingle__projectExists__projectIsReturned() async throws {
@@ -39,6 +30,34 @@ final class ProjectControllerTests: XCTestCase {
 		}
 	}
 
+	func test__delete__projectDoesNotExist__throwsNotFound() async throws {
+		let projectID = UUID()
+		try await addProject(id: UUID())
+
+		await XCTAssertThrowsAbortError(.notFound, try await controller.delete(id: projectID, on: app.db))
+	}
+
+	func test__delete__projectExists_projectHasNoTasks__projectIsRemoved() async throws {
+		let projectID = UUID()
+		try await addProject(id: projectID, tasks: [
+		])
+
+		try await controller.delete(id: projectID, on: app.db)
+
+		await XCTAssertThrowsAbortError(.notFound, try await controller.loadSingle(id: projectID, on: app.db))
+	}
+
+	func test__delete__projectExists_projectHasTasks__projectIsRemoved() async throws {
+		let projectID = UUID()
+		try await addProject(id: projectID, tasks: [
+			.init(name: "foo", descr: "foo d"),
+		])
+
+		try await controller.delete(id: projectID, on: app.db)
+
+		await XCTAssertThrowsAbortError(.notFound, try await controller.loadSingle(id: projectID, on: app.db))
+	}
+
 	func test__update__projectExists_projectHasNoTasks_dtoHasNoTasks__projectIsUpdated() async throws {
 		let projectID = UUID()
 		try await addProject(id: projectID)
@@ -48,7 +67,7 @@ final class ProjectControllerTests: XCTestCase {
 			descr: "Updated description"
 		)
 
-		let result = try await controller.update(id: projectID, dto: dto, db: app.db)
+		let result = try await controller.update(projectID: projectID, from: dto, on: app.db)
 
 		XCTAssertEqual(result.id, projectID)
 		XCTAssertEqual(result.name, dto.name)
@@ -72,7 +91,7 @@ final class ProjectControllerTests: XCTestCase {
 			]
 		)
 
-		let result = try await controller.update(id: projectID, dto: dto, db: app.db)
+		let result = try await controller.update(projectID: projectID, from: dto, on: app.db)
 
 		XCTAssertEqual(result.id, projectID)
 		XCTAssertEqual(result.name, dto.name)
@@ -114,7 +133,7 @@ final class ProjectControllerTests: XCTestCase {
 			]
 		)
 
-		let result = try await controller.update(id: projectID, dto: dto, db: app.db)
+		let result = try await controller.update(projectID: projectID, from: dto, on: app.db)
 
 		XCTAssertEqual(result.id, projectID)
 		XCTAssertEqual(result.name, dto.name)
@@ -148,7 +167,7 @@ final class ProjectControllerTests: XCTestCase {
 			descr: "Updated description"
 		)
 
-		let result = try await controller.update(id: projectID, dto: dto, db: app.db)
+		let result = try await controller.update(projectID: projectID, from: dto, on: app.db)
 
 		XCTAssertEqual(result.id, projectID)
 		XCTAssertEqual(result.name, dto.name)
