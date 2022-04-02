@@ -48,7 +48,7 @@ final class ProjectControllerTests: XCTestCase {
 			descr: "Updated description"
 		)
 
-		let result = try await controller.update(id: projectID, dto: dto, db: app.db)
+		let result = try await controller.update(projectID: projectID, from: dto, on: app.db)
 
 		XCTAssertEqual(result.id, projectID)
 		XCTAssertEqual(result.name, dto.name)
@@ -72,7 +72,7 @@ final class ProjectControllerTests: XCTestCase {
 			]
 		)
 
-		let result = try await controller.update(id: projectID, dto: dto, db: app.db)
+		let result = try await controller.update(projectID: projectID, from: dto, on: app.db)
 
 		XCTAssertEqual(result.id, projectID)
 		XCTAssertEqual(result.name, dto.name)
@@ -114,7 +114,7 @@ final class ProjectControllerTests: XCTestCase {
 			]
 		)
 
-		let result = try await controller.update(id: projectID, dto: dto, db: app.db)
+		let result = try await controller.update(projectID: projectID, from: dto, on: app.db)
 
 		XCTAssertEqual(result.id, projectID)
 		XCTAssertEqual(result.name, dto.name)
@@ -148,7 +148,7 @@ final class ProjectControllerTests: XCTestCase {
 			descr: "Updated description"
 		)
 
-		let result = try await controller.update(id: projectID, dto: dto, db: app.db)
+		let result = try await controller.update(projectID: projectID, from: dto, on: app.db)
 
 		XCTAssertEqual(result.id, projectID)
 		XCTAssertEqual(result.name, dto.name)

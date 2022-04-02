@@ -38,21 +38,21 @@ class ProjectController {
 
 	func update(req: Request, id: UUID) async throws -> ProjectDTO {
 		let dto = try req.content.decode(ProjectDTO.self)
-		return try await update(id: id, dto: dto, db: req.db)
+		return try await update(projectID: id, from: dto, on: req.db)
 	}
 
-	func update(id: UUID, dto: ProjectDTO, db: Database) async throws -> ProjectDTO {
+	func update(projectID: UUID, from dto: ProjectDTO, on db: Database) async throws -> ProjectDTO {
 		var dto = dto
-		dto.id = id
+		dto.id = projectID
 
-		guard let project = try await Project.find(id, on: db)
+		guard let project = try await Project.find(projectID, on: db)
 		else { throw Abort(.notFound) }
 
 		dto.copy(onto: project)
 		try await project.update(on: db)
 
 		let taskController = TaskController()
-		let currentTasks = try await taskController.all(db: db, projectID: id)
+		let currentTasks = try await taskController.all(db: db, projectID: projectID)
 			.get()
 		let tasksToUpdate = dto.tasks ?? []
 		for task in currentTasks {
@@ -60,20 +60,20 @@ class ProjectController {
 			else { continue }
 
 			if !tasksToUpdate.contains(where: { $0.id == taskID }) {
-				try await taskController.delete(db: db, projectID: id, id: taskID)
+				try await taskController.delete(db: db, projectID: projectID, id: taskID)
 			}
 		}
 		for task in tasksToUpdate {
 			if let taskID = currentTasks.first(where: { $0.id == task.id })?.id {
-				_ = try await taskController.update(db: db, dto: task, projectID: id, id: taskID)
+				_ = try await taskController.update(db: db, dto: task, projectID: projectID, id: taskID)
 					.get()
 			} else {
-				_ = try await taskController.create(db: db, dto: task, projectID: id)
+				_ = try await taskController.create(db: db, dto: task, projectID: projectID)
 					.get()
 			}
 		}
 
-		return try await self.loadSingle(id: id, on: db)
+		return try await self.loadSingle(id: projectID, on: db)
 	}
 
 	func delete(req: Request, id: UUID) -> EventLoopFuture<HTTPStatus> {
