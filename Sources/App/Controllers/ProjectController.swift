@@ -76,10 +76,28 @@ class ProjectController {
 		return try await self.loadSingle(id: projectID, on: db)
 	}
 
-	func delete(req: Request, id: UUID) -> EventLoopFuture<HTTPStatus> {
-		return Project.find(id, on: req.db)
-			.unwrap(or: Abort(.notFound))
-			.flatMap { $0.delete(on: req.db) }
-			.transform(to: .noContent)
+	func delete(req: Request, id: UUID) async throws -> HTTPStatus {
+		try await delete(id: id, on: req.db)
+		return .noContent
+	}
+
+	func delete(id: UUID, on db: Database) async throws {
+		guard let project = try await Project.find(id, on: db)
+		else { throw Abort(.notFound) }
+
+		let taskController = TaskController()
+		try await project.$tasks.load(on: db)
+		try await withThrowingTaskGroup(of: Void.self) { taskGroup in
+			for task in project.tasks {
+				taskGroup.addTask {
+					try await taskController.delete(db: db, projectID: id, id: try task.requireID())
+				}
+			}
+
+			for try await _ in taskGroup {
+			}
+		}
+
+		try await project.delete(on: db)
 	}
 }

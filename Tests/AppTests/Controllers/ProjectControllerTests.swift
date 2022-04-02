@@ -39,6 +39,61 @@ final class ProjectControllerTests: XCTestCase {
 		}
 	}
 
+	func test__delete__projectDoesNotExist__throwsNotFound() async throws {
+		let projectID = UUID()
+		try await addProject(id: UUID())
+
+		do {
+			try await controller.delete(id: projectID, on: app.db)
+			XCTFail("Should have thrown")
+		} catch {
+			if let error = error as? AbortError {
+				XCTAssertEqual(error.status, .notFound)
+			} else {
+				XCTFail("Unexpected error: \(error)")
+			}
+		}
+	}
+
+	func test__delete__projectExists_projectHasNoTasks__projectIsRemoved() async throws {
+		let projectID = UUID()
+		try await addProject(id: projectID, tasks: [
+		])
+
+		try await controller.delete(id: projectID, on: app.db)
+
+		do {
+			_ = try await controller.loadSingle(id: projectID, on: app.db)
+			XCTFail("Should have thrown")
+		} catch {
+			if let error = error as? AbortError {
+				XCTAssertEqual(error.status, .notFound)
+			} else {
+				XCTFail("Unexpected error: \(error)")
+			}
+		}
+	}
+
+	func test__delete__projectExists_projectHasTasks__projectIsRemoved() async throws {
+		let projectID = UUID()
+		try await addProject(id: projectID, tasks: [
+			.init(name: "foo", descr: "foo d"),
+		])
+
+		try await controller.delete(id: projectID, on: app.db)
+
+		do {
+			_ = try await controller.loadSingle(id: projectID, on: app.db)
+			XCTFail("Should have thrown")
+		} catch {
+			if let error = error as? AbortError {
+				XCTAssertEqual(error.status, .notFound)
+			} else {
+				XCTFail("Unexpected error: \(error)")
+			}
+		}
+	}
+
 	func test__update__projectExists_projectHasNoTasks_dtoHasNoTasks__projectIsUpdated() async throws {
 		let projectID = UUID()
 		try await addProject(id: projectID)
