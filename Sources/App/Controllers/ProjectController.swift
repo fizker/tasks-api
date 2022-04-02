@@ -11,7 +11,11 @@ class ProjectController {
 	func create(req: Request) throws -> EventLoopFuture<ProjectDTO> {
 		let dto = try req.content.decode(ProjectDTO.self)
 		let project = dto.projectValue
-		return project.save(on: req.db).map { ProjectDTO(project) }
+		return project.save(on: req.db).map {
+			var dto = ProjectDTO(project)
+			dto.tasks = []
+			return dto
+		}
 	}
 
 	private func loadSingle(id: UUID, on db: Database) -> EventLoopFuture<ProjectDTO> {
