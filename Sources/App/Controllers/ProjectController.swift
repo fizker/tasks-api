@@ -2,38 +2,37 @@ import Fluent
 import Vapor
 
 class ProjectController {
-	func all(req: Request) -> EventLoopFuture<[ProjectDTO]> {
-		return Project.query(on: req.db)
+	func all(req: Request) async throws -> [ProjectDTO] {
+		let projects = try await Project.query(on: req.db)
 			.with(\.$tasks)
-			.all().map { $0.map(ProjectDTO.init) }
+			.all()
+
+		return projects.map(ProjectDTO.init)
 	}
 
-	func create(req: Request) throws -> EventLoopFuture<ProjectDTO> {
+	func create(req: Request) async throws -> ProjectDTO {
 		let dto = try req.content.decode(ProjectDTO.self)
 		let project = dto.projectValue
-		return project.save(on: req.db).map {
-			var dto = ProjectDTO(project)
-			dto.tasks = []
-			return dto
-		}
-	}
 
-	private func loadSingle(id: UUID, on db: Database) -> EventLoopFuture<ProjectDTO> {
-		return Project.query(on: db)
-			.filter(\.$id == id)
-			.with(\.$tasks)
-			.first()
-			.unwrap(or: Abort(.notFound))
-			.map(ProjectDTO.init(_:))
+		try await project.save(on: req.db)
+
+		var updatedDTO = ProjectDTO(project)
+		updatedDTO.tasks = []
+		return updatedDTO
 	}
 
 	func loadSingle(id: UUID, on db: Database) async throws -> ProjectDTO {
-		let future = loadSingle(id: id, on: db) as EventLoopFuture<ProjectDTO>
-		return try await future.get()
+		guard let project = try await Project.query(on: db)
+			.filter(\.$id == id)
+			.with(\.$tasks)
+			.first()
+		else { throw Abort(.notFound) }
+
+		return ProjectDTO(project)
 	}
 
-	func get(req: Request, id: UUID) -> EventLoopFuture<ProjectDTO> {
-		loadSingle(id: id, on: req.db)
+	func get(req: Request, id: UUID) async throws -> ProjectDTO {
+		try await loadSingle(id: id, on: req.db)
 	}
 
 	func update(req: Request, id: UUID) async throws -> ProjectDTO {
@@ -53,7 +52,6 @@ class ProjectController {
 
 		let taskController = TaskController()
 		let currentTasks = try await taskController.all(db: db, projectID: projectID)
-			.get()
 		let tasksToUpdate = dto.tasks ?? []
 		for task in currentTasks {
 			guard let taskID = task.id
@@ -66,10 +64,8 @@ class ProjectController {
 		for task in tasksToUpdate {
 			if let taskID = currentTasks.first(where: { $0.id == task.id })?.id {
 				_ = try await taskController.update(db: db, dto: task, projectID: projectID, id: taskID)
-					.get()
 			} else {
 				_ = try await taskController.create(db: db, dto: task, projectID: projectID)
-					.get()
 			}
 		}
 

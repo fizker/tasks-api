@@ -33,16 +33,16 @@ func routes(_ app: Application) throws {
 		app.post(use: p.create(req:))
 
 		app.group(":project") { app in
-			app.get { p.get(req: $0, id: try $0.parameters.require("project")) }
+			app.get { try await p.get(req: $0, id: try $0.parameters.require("project")) }
 			app.put { try await p.update(req: $0, id: try $0.parameters.require("project")) }
 			app.delete { try await p.delete(req: $0, id: try $0.parameters.require("project")) }
 
 			app.group("tasks") { app in
-				app.get { t.all(req: $0, projectID: try $0.parameters.require("project")) }
-				app.post { try t.create(req: $0, projectID: try $0.parameters.require("project")) }
+				app.get { try await t.all(req: $0, projectID: try $0.parameters.require("project")) }
+				app.post { try await t.create(req: $0, projectID: try $0.parameters.require("project")) }
 				app.group(":task") { app in
-					app.get { t.get(req: $0, projectID: try $0.parameters.require("project"), id: try $0.parameters.require("task")) }
-					app.put { try t.update(req: $0, projectID: try $0.parameters.require("project"), id: try $0.parameters.require("task")) }
+					app.get { try await t.get(req: $0, projectID: try $0.parameters.require("project"), id: try $0.parameters.require("task")) }
+					app.put { try await t.update(req: $0, projectID: try $0.parameters.require("project"), id: try $0.parameters.require("task")) }
 					app.delete { try await t.delete(req: $0, projectID: try $0.parameters.require("project"), id: try $0.parameters.require("task")) }
 				}
 			}

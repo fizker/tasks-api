@@ -1,8 +1,8 @@
 import Fluent
 
-struct CreateTask: Migration {
-	func prepare(on database: Database) -> EventLoopFuture<Void> {
-		return database.schema(Task.schema)
+struct CreateTask: AsyncMigration {
+	func prepare(on database: Database) async throws {
+		try await database.schema(Task.schema)
 			.id()
 			.field("name", .string, .required)
 			.field("project", .uuid, .required, .references(Project.schema, "id"))
@@ -11,7 +11,7 @@ struct CreateTask: Migration {
 			.create()
 	}
 
-	func revert(on database: Database) -> EventLoopFuture<Void> {
-		return database.schema(Task.schema).delete()
+	func revert(on database: Database) async throws {
+		try await database.schema(Task.schema).delete()
 	}
 }
