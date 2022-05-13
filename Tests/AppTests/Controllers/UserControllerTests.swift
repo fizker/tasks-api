@@ -56,7 +56,7 @@ final class UserControllerTests: XCTestCase {
 		}
 	}
 
-	func test__get__notLoggedIn__throwsNotAuthorized() async throws {
+	func test__self_get__notLoggedIn__throwsNotAuthorized() async throws {
 		let headers = HTTPHeaders()
 
 		try app.test(.GET, "/users/self", headers: headers) { res in
@@ -64,7 +64,7 @@ final class UserControllerTests: XCTestCase {
 		}
 	}
 
-	func test__get__loggedIn_userDoesNotExist__throwsNotAuthorized() async throws {
+	func test__self_get__loggedIn_userDoesNotExist__throwsNotAuthorized() async throws {
 		var headers = HTTPHeaders()
 		headers.basicAuthorization = .init(username: "foo", password: "bar")
 
@@ -73,7 +73,7 @@ final class UserControllerTests: XCTestCase {
 		}
 	}
 
-	func test__get__loggedIn_invalidCredentials__throwsNotAuthorized() async throws {
+	func test__self_get__loggedIn_invalidCredentials__throwsNotAuthorized() async throws {
 		let user = UserModel(name: "John Doe", username: "foo", passwordHash: try Bcrypt.hash("bar"))
 		try await user.save(on: app.db)
 
@@ -85,7 +85,7 @@ final class UserControllerTests: XCTestCase {
 		}
 	}
 
-	func test__get__loggedIn__returnsUserDTO() async throws {
+	func test__self_get__loggedIn__returnsUserDTO() async throws {
 		let user = UserModel(name: "John Doe", username: "foo", passwordHash: try Bcrypt.hash("bar"))
 		try await user.save(on: app.db)
 
