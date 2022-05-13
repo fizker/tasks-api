@@ -9,4 +9,11 @@ final class UserInvitationModel: Model {
 
 	@Timestamp(key: "valid_until", on: .delete)
 	var validUntil: Date?
+
+	init() {}
+
+	init(id: UUID? = nil, validUntil: Date) {
+		self.id = id
+		self.validUntil = validUntil
+	}
 }

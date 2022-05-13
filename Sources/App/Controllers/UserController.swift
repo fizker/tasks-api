@@ -2,11 +2,11 @@ import Fluent
 import Vapor
 
 class UserController {
-	func registerUser(req: Request) async throws -> HTTPResponseStatus {
+	func register(req: Request) async throws -> HTTPResponseStatus {
 		let dto = try req.content.decode(RegisterUserDTO.self)
 
 		try await req.db.transaction { db in
-			try await self.registerUser(dto, on: db)
+			try await self.register(dto, on: db)
 		}
 
 		return .created
@@ -24,7 +24,7 @@ class UserController {
 		try await user.save(on: req.db)
 	}
 
-	func registerUser(_ dto: RegisterUserDTO, on db: Database) async throws {
+	func register(_ dto: RegisterUserDTO, on db: Database) async throws {
 		guard let invite = try await UserInvitationModel.query(on: db)
 			.filter(\.$id == dto.token)
 			.first()
