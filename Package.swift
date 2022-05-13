@@ -8,9 +8,9 @@ let package = Package(
 	],
 	dependencies: [
 		// 💧 A server-side Swift web framework.
-		.package(url: "https://github.com/vapor/vapor.git", from: "4.55.2"),
+		.package(url: "https://github.com/vapor/vapor.git", from: "4.57.1"),
 		.package(url: "https://github.com/vapor/fluent.git", from: "4.4.0"),
-		.package(url: "https://github.com/vapor/fluent-postgres-driver.git", from: "2.2.3"),
+		.package(url: "https://github.com/vapor/fluent-postgres-driver.git", from: "2.2.6"),
 		.package(url: "https://github.com/vapor/fluent-sqlite-driver.git", from: "4.1.0"),
 	],
 	targets: [
