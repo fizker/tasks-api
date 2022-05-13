@@ -5,4 +5,5 @@ let migrations: [() -> Migration] = [
 	CreateTask.init,
 	CreateTodoSettings.init,
 	SortTasks.init,
+	CreateUsers.init,
 ]
