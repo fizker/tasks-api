@@ -6,7 +6,7 @@ final class UserControllerTests: XCTestCase {
 	var app: Application!
 	let controller = UserController()
 
-	func test__registerUser__noMatchingInvitation__throwsNotFound() async throws {
+	func test__register_post__noMatchingInvitation__throwsNotFound() async throws {
 		let request = RegisterUserDTO(token: UUID(), name: "John Doe", username: "foo", password: "bar")
 
 		try app.test(.POST, "/users/register", beforeRequest: { req in
@@ -16,7 +16,7 @@ final class UserControllerTests: XCTestCase {
 		}
 	}
 
-	func test__registerUser__matchingInvite_inviteIsNotExpired__userIsCreated_returns204() async throws {
+	func test__register_post__matchingInvite_inviteIsNotExpired__userIsCreated_returns204() async throws {
 		let inviteID = UUID()
 		let request = RegisterUserDTO(token: inviteID, name: "John Doe", username: "foo", password: "bar")
 
@@ -42,7 +42,7 @@ final class UserControllerTests: XCTestCase {
 		}
 	}
 
-	func test__registerUser__notLoggedIn_matchingInvite_inviteIsExpired__throwsNotFound() async throws {
+	func test__register_post__notLoggedIn_matchingInvite_inviteIsExpired__throwsNotFound() async throws {
 		let inviteID = UUID()
 		let request = RegisterUserDTO(token: inviteID, name: "John Doe", username: "foo", password: "bar")
 
