@@ -9,39 +9,51 @@ final class UserControllerTests: XCTestCase {
 	func test__registerUser__noMatchingInvitation__throwsNotFound() async throws {
 		let request = RegisterUserDTO(token: UUID(), name: "John Doe", username: "foo", password: "bar")
 
-		await XCTAssertThrowsAbortError(.notFound, try await controller.register(request, on: app.db))
+		try app.test(.POST, "/users/register", beforeRequest: { req in
+			try req.content.encode(request)
+		}) { res in
+			XCTAssertEqual(res.status, .notFound)
+		}
 	}
 
-	func test__registerUser__matchingInvite_inviteIsNotExpired__userIsCreated() async throws {
+	func test__registerUser__matchingInvite_inviteIsNotExpired__userIsCreated_returns204() async throws {
 		let inviteID = UUID()
 		let request = RegisterUserDTO(token: inviteID, name: "John Doe", username: "foo", password: "bar")
 
 		let invite = UserInvitationModel(id: inviteID, validUntil: Date(timeIntervalSinceNow: 60))
 		try await invite.create(on: app.db)
 
-		try await controller.register(request, on: app.db)
+		try await app.test(.POST, "/users/register", beforeRequest: { req in
+			try req.content.encode(request)
+		}) { res in
+			XCTAssertEqual(res.status, .created)
 
-		let users = try await UserModel.query(on: app.db)
-			.all()
+			let users = try await UserModel.query(on: app.db)
+				.all()
 
-		XCTAssertEqual(1, users.count)
+			XCTAssertEqual(1, users.count)
 
-		guard let user = users.first
-		else { return }
+			guard let user = users.first
+			else { return }
 
-		XCTAssertEqual(user.name, "John Doe")
-		XCTAssertEqual(user.username, "foo")
-		XCTAssertTrue(try Bcrypt.verify("bar", created: user.passwordHash))
+			XCTAssertEqual(user.name, "John Doe")
+			XCTAssertEqual(user.username, "foo")
+			XCTAssertTrue(try Bcrypt.verify("bar", created: user.passwordHash))
+		}
 	}
 
-	func test__registerUser__matchingInvite_inviteIsExpired__throwsNotFound() async throws {
+	func test__registerUser__notLoggedIn_matchingInvite_inviteIsExpired__throwsNotFound() async throws {
 		let inviteID = UUID()
 		let request = RegisterUserDTO(token: inviteID, name: "John Doe", username: "foo", password: "bar")
 
 		let invite = UserInvitationModel(id: inviteID, validUntil: Date(timeIntervalSinceNow: -5))
 		try await invite.create(on: app.db)
 
-		await XCTAssertThrowsAbortError(.notFound, try await controller.register(request, on: app.db))
+		try app.test(.POST, "/users/register", beforeRequest: { req in
+			try req.content.encode(request)
+		}) { res in
+			XCTAssertEqual(res.status, .notFound)
+		}
 	}
 
 	override func setUp() async throws {

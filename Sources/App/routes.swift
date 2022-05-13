@@ -27,6 +27,7 @@ func routes(_ app: Application) throws {
 	let p = ProjectController()
 	let t = TaskController()
 	let todo = TodoController()
+	let u = UserController()
 
 	app.group("projects") { app in
 		app.get(use: p.all(req:))
@@ -52,5 +53,9 @@ func routes(_ app: Application) throws {
 	app.group("todo") { app in
 		app.get(use: todo.currentItem(req:))
 		app.post(use: todo.moveToNextItem(req:))
+	}
+
+	app.group("users") { app in
+		app.post("register", use: u.register(req:))
 	}
 }
