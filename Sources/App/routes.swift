@@ -57,5 +57,9 @@ func routes(_ app: Application) throws {
 
 	app.group("users") { app in
 		app.post("register", use: u.register(req:))
+
+		let app = app.grouped(UserModel.authenticator())
+		app.get("self", use: u.get(req:))
+		app.put("self", use: u.update(req:))
 	}
 }

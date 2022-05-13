@@ -17,11 +17,13 @@ class UserController {
 		return try .init(user)
 	}
 
-	func update(req: Request) async throws {
+	func update(req: Request) async throws -> HTTPResponseStatus {
 		let user = try req.auth.require(UserModel.self)
 		let dto = try req.content.decode(UserDTO.self)
 		try dto.copy(onto: user)
 		try await user.save(on: req.db)
+
+		return .ok
 	}
 
 	func register(_ dto: RegisterUserDTO, on db: Database) async throws {
