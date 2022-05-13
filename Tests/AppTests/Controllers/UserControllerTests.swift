@@ -92,11 +92,94 @@ final class UserControllerTests: XCTestCase {
 		var headers = HTTPHeaders()
 		headers.basicAuthorization = .init(username: "foo", password: "bar")
 
-		let expected = try UserDTO(user)
+		let expected = UserDTO(user)
 
 		try app.test(.GET, "/users/self", headers: headers) { res in
 			XCTAssertEqual(res.status, .ok)
 			XCTAssertEqual(try res.content.decode(UserDTO.self), expected)
+		}
+	}
+
+	func test__self_put__notLoggedIn__returns401_userIsNotUpdated() async throws {
+		let request = UserDTO(name: "Jane Doe", username: "foo2")
+
+		let headers = HTTPHeaders()
+
+		try await app.test(.PUT, "/users/self", headers: headers, beforeRequest: { req in
+			try req.content.encode(request)
+		}) { res in
+			XCTAssertEqual(res.status, .unauthorized)
+
+			let users = try await UserModel.query(on: app.db).all()
+			XCTAssertTrue(users.isEmpty)
+		}
+	}
+
+	func test__self_put__loggedIn_validCredentials_passwordNotIncluded__fieldsUpdatedAsExpected_returns201() async throws {
+		let request = UserDTO(name: "Jane Doe", username: "foo2")
+
+		let user = UserModel(name: "John Doe", username: "foo", passwordHash: try Bcrypt.hash("bar"))
+		try await user.save(on: app.db)
+
+		var headers = HTTPHeaders()
+		headers.basicAuthorization = .init(username: "foo", password: "bar")
+
+		try await app.test(.PUT, "/users/self", headers: headers, beforeRequest: { req in
+			try req.content.encode(request)
+		}) { res in
+			XCTAssertEqual(res.status, .noContent)
+
+			let users = try await UserModel.query(on: app.db).all()
+			XCTAssertEqual(users.count, 1)
+
+			guard let user = users.first
+			else { return }
+
+			XCTAssertEqual(user.name, "Jane Doe")
+			XCTAssertEqual(user.username, "foo2")
+			XCTAssertTrue(try Bcrypt.verify("bar", created: user.passwordHash))
+		}
+	}
+
+	func test__self_put__loggedIn_validCredentials_passwordIncluded__passwordUpdated_otherUserNotAffected_returns201() async throws {
+		let request = UserDTO(name: "Jane Doe", username: "foo2", password: "bar2")
+
+		let user = UserModel(name: "John Doe", username: "foo", passwordHash: try Bcrypt.hash("bar"))
+		try await user.save(on: app.db)
+
+		let otherUser = UserModel(name: "abc", username: "def", passwordHash: try Bcrypt.hash("ghi"))
+		try await otherUser.save(on: app.db)
+
+		var headers = HTTPHeaders()
+		headers.basicAuthorization = .init(username: "foo", password: "bar")
+
+		try await app.test(.PUT, "/users/self", headers: headers, beforeRequest: { req in
+			try req.content.encode(request)
+		}) { res in
+			XCTAssertEqual(res.status, .noContent)
+
+			let users = try await UserModel.query(on: app.db).all()
+			XCTAssertEqual(users.count, 2)
+
+			guard let user = users.first(where: { $0.username == "foo2" })
+			else {
+				XCTFail("Could not find user \"foo2\"")
+				return
+			}
+
+			XCTAssertEqual(user.name, "Jane Doe")
+			XCTAssertEqual(user.username, "foo2")
+			XCTAssertTrue(try Bcrypt.verify("bar2", created: user.passwordHash))
+
+			guard let otherUser = users.first(where: { $0.username == "def" })
+			else {
+				XCTFail("Could not find user \"def\"")
+				return
+			}
+
+			XCTAssertEqual(otherUser.name, "abc")
+			XCTAssertEqual(otherUser.username, "def")
+			XCTAssertTrue(try Bcrypt.verify("ghi", created: otherUser.passwordHash))
 		}
 	}
 

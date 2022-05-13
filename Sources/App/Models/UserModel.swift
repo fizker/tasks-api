@@ -28,8 +28,7 @@ final class UserModel: Model {
 }
 
 extension UserDTO {
-	init(_ user: UserModel) throws {
-		id = try user.requireID()
+	init(_ user: UserModel) {
 		name = user.name
 		username = user.username
 	}

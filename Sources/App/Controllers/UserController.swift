@@ -12,9 +12,9 @@ class UserController {
 		return .created
 	}
 
-	func get(req: Request) async throws -> UserDTO {
+	func get(req: Request) throws -> UserDTO {
 		let user = try req.auth.require(UserModel.self)
-		return try .init(user)
+		return .init(user)
 	}
 
 	func update(req: Request) async throws -> HTTPResponseStatus {
@@ -23,7 +23,7 @@ class UserController {
 		try dto.copy(onto: user)
 		try await user.save(on: req.db)
 
-		return .ok
+		return .noContent
 	}
 
 	func register(_ dto: RegisterUserDTO, on db: Database) async throws {
