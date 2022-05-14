@@ -15,7 +15,17 @@ extension Request {
 	}
 }
 
+struct EnsureLoggedInMiddleware: AsyncMiddleware {
+	func respond(to request: Request, chainingTo next: AsyncResponder) async throws -> Response {
+		_ = try request.auth.require(UserModel.self)
+
+		return try await next.respond(to: request)
+	}
+}
+
 func routes(_ app: Application) throws {
+	let app = app.grouped(UserModel.authenticator())
+
 	app.get { req in
 		return "It works!"
 	}
@@ -30,7 +40,7 @@ func routes(_ app: Application) throws {
 	let u = UserController()
 
 	app
-	.grouped(UserModel.authenticator())
+	.grouped(EnsureLoggedInMiddleware())
 	.group("projects") { app in
 		app.get(use: p.all(req:))
 		app.post(use: p.create(req:))
@@ -53,7 +63,7 @@ func routes(_ app: Application) throws {
 	}
 
 	app
-	.grouped(UserModel.authenticator())
+	.grouped(EnsureLoggedInMiddleware())
 	.group("todo") { app in
 		app.get(use: todo.currentItem(req:))
 		app.post(use: todo.moveToNextItem(req:))
@@ -62,7 +72,7 @@ func routes(_ app: Application) throws {
 	app.group("users") { app in
 		app.post("register", use: u.register(req:))
 
-		let app = app.grouped(UserModel.authenticator())
+		let app = app.grouped(EnsureLoggedInMiddleware())
 		app.get("self", use: u.get(req:))
 		app.put("self", use: u.update(req:))
 	}
