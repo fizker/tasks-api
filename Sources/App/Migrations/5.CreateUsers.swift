@@ -1,3 +1,4 @@
+import Vapor
 import Fluent
 
 struct CreateUsers: AsyncMigration {
@@ -14,6 +15,10 @@ struct CreateUsers: AsyncMigration {
 			.id()
 			.field("valid_until", .datetime)
 			.create()
+
+		// Seeding an admin user
+		let adminUser = UserModel(name: "Admin", username: "admin", passwordHash: try Bcrypt.hash("admin"))
+		try await adminUser.create(on: database)
 	}
 
 	func revert(on database: Database) async throws {

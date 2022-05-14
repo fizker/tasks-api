@@ -1,10 +1,32 @@
 import XCTest
 import XCTVapor
+import Fluent
 @testable import App
 
 final class UserControllerTests: XCTestCase {
 	var app: Application!
 	let controller = UserController()
+
+	func test__migrations__cleanData__adminUserIsCreated() async throws {
+		let users = try await UserModel.query(on: app.db)
+		.all()
+
+		XCTAssertEqual(users.count, 1)
+
+		guard let user = users.first
+		else { return }
+
+		XCTAssertEqual(user.name, "Admin")
+		XCTAssertEqual(user.username, "admin")
+		XCTAssertTrue(try Bcrypt.verify("admin", created: user.passwordHash))
+
+		var headers = HTTPHeaders()
+		headers.basicAuthorization = .init(username: "admin", password: "admin")
+
+		try app.test(.GET, "/users/self", headers: headers) { res in
+			XCTAssertEqual(res.status, .ok)
+		}
+	}
 
 	func test__register_post__noMatchingInvitation__throwsNotFound() async throws {
 		let request = RegisterUserDTO(token: UUID(), name: "John Doe", username: "foo", password: "bar")
@@ -17,6 +39,8 @@ final class UserControllerTests: XCTestCase {
 	}
 
 	func test__register_post__matchingInvite_inviteIsNotExpired__userIsCreated_returns204() async throws {
+		try await removeAdminUser()
+
 		let inviteID = UUID()
 		let request = RegisterUserDTO(token: inviteID, name: "John Doe", username: "foo", password: "bar")
 
@@ -101,6 +125,8 @@ final class UserControllerTests: XCTestCase {
 	}
 
 	func test__self_put__notLoggedIn__returns401_userIsNotUpdated() async throws {
+		try await removeAdminUser()
+
 		let request = UserDTO(name: "Jane Doe", username: "foo2")
 
 		let headers = HTTPHeaders()
@@ -116,6 +142,8 @@ final class UserControllerTests: XCTestCase {
 	}
 
 	func test__self_put__loggedIn_validCredentials_passwordNotIncluded__fieldsUpdatedAsExpected_returns201() async throws {
+		try await removeAdminUser()
+
 		let request = UserDTO(name: "Jane Doe", username: "foo2")
 
 		let user = UserModel(name: "John Doe", username: "foo", passwordHash: try Bcrypt.hash("bar"))
@@ -142,6 +170,8 @@ final class UserControllerTests: XCTestCase {
 	}
 
 	func test__self_put__loggedIn_validCredentials_passwordIncluded__passwordUpdated_otherUserNotAffected_returns201() async throws {
+		try await removeAdminUser()
+
 		let request = UserDTO(name: "Jane Doe", username: "foo2", password: "bar2")
 
 		let user = UserModel(name: "John Doe", username: "foo", passwordHash: try Bcrypt.hash("bar"))
@@ -181,6 +211,15 @@ final class UserControllerTests: XCTestCase {
 			XCTAssertEqual(otherUser.username, "def")
 			XCTAssertTrue(try Bcrypt.verify("ghi", created: otherUser.passwordHash))
 		}
+	}
+
+	private func removeAdminUser() async throws {
+		guard let user = try await UserModel.query(on: app.db)
+			.filter(\UserModel.$username == "admin")
+			.first()
+		else { return }
+
+		try await user.delete(on: app.db)
 	}
 
 	override func setUp() async throws {
