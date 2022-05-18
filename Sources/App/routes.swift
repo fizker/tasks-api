@@ -34,10 +34,16 @@ func routes(_ app: Application) throws {
 		return "Hello, world!"
 	}
 
+	let auth = AuthController()
 	let p = ProjectController()
 	let t = TaskController()
 	let todo = TodoController()
 	let u = UserController()
+
+	app.group("auth") { app in
+		app.post("token", use: auth.requestToken(req:))
+	}
+
 
 	app
 	.grouped(EnsureLoggedInMiddleware())

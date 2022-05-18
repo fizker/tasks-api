@@ -25,7 +25,7 @@ class AuthController {
 				.first(),
 			try Bcrypt.verify(request.password, created: user.passwordHash)
 		else {
-			throw ErrorResponse(code: .accessDenied, description: nil)
+			throw ErrorResponse(code: .invalidGrant, description: nil)
 		}
 
 		let accessToken = AccessTokenModel(code: UUID().uuidString, expiresIn: .oneHour)
@@ -35,6 +35,9 @@ class AuthController {
 	}
 
 	private func handle(request: RefreshTokenRequest, on db: Database) async throws -> AccessTokenResponse {
-		throw ErrorResponse(code: .invalidGrant, description: nil)
+		throw ErrorResponse(code: .unsupportedGrantType, description: nil)
 	}
+}
+
+extension AccessTokenResponse: Content {
 }
