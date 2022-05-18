@@ -209,6 +209,15 @@
         }
       },
       {
+        "package": "swift-oauth2-models",
+        "repositoryURL": "https://github.com/fizker/swift-oauth2-models.git",
+        "state": {
+          "branch": null,
+          "revision": "9bc81c59d585ebb9d2486d5584cdc43ec1c2e55d",
+          "version": "0.2.1"
+        }
+      },
+      {
         "package": "vapor",
         "repositoryURL": "https://github.com/vapor/vapor.git",
         "state": {
