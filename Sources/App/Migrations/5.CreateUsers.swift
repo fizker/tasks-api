@@ -3,7 +3,7 @@ import Fluent
 
 struct CreateUsers: AsyncMigration {
 	func prepare(on database: Database) async throws {
-		try await database.schema(UserModel.schema)
+		try await database.schema("users")
 			.id()
 			.field("name", .string, .required)
 			.field("username", .string, .required)
@@ -11,7 +11,7 @@ struct CreateUsers: AsyncMigration {
 			.unique(on: "username")
 			.create()
 
-		try await database.schema(UserInvitationModel.schema)
+		try await database.schema("user_invitations")
 			.id()
 			.field("valid_until", .datetime)
 			.create()
@@ -22,7 +22,7 @@ struct CreateUsers: AsyncMigration {
 	}
 
 	func revert(on database: Database) async throws {
-		try await database.schema(UserInvitationModel.schema).delete()
-		try await database.schema(UserModel.schema).delete()
+		try await database.schema("user_invitations").delete()
+		try await database.schema("users").delete()
 	}
 }
