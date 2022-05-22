@@ -98,7 +98,135 @@ final class AuthControllerTests: XCTestCase {
 	}
 
 	func test__token_post__refreshTokenRequest_tokenIsAlreadyUsed__returnsInvalidGrantError_accessTokenIsInvalidated() async throws {
-		/*@START_MENU_TOKEN@*/throw XCTSkip("Not implemented")/*@END_MENU_TOKEN@*/
+		try await createAccessToken(code: "abc", refreshToken: "def")
+
+		let refreshTokenRequest = RefreshTokenRequest(refreshToken: "def")
+
+		try await app.test(.POST, "/auth/token", beforeRequest: { req in
+			try req.content.encode(refreshTokenRequest)
+		}) { res in
+			XCTAssertEqual(res.status, .ok)
+			guard res.status == .ok
+			else {
+				XCTFail("Failed to refresh first token")
+				return
+			}
+
+			guard let refreshTokenModel = try await RefreshTokenModel.query(on: app.db)
+				.filter(\.$token == "def")
+				.with(\.$refreshes)
+				.with(\.$succeededBy)
+				.withDeleted()
+				.first()
+			else {
+				XCTFail("Could not load refresh token")
+				return
+			}
+
+			XCTAssertNotNil(refreshTokenModel.succeededBy)
+
+			try await app.test(.POST, "/auth/token", beforeRequest: { req in
+				try req.content.encode(refreshTokenRequest)
+			}) { res in
+				XCTAssertEqual(res.status, .badRequest)
+
+				let response = try res.content.decode(ErrorResponse.self)
+
+				XCTAssertEqual(response.code, .invalidGrant)
+
+				guard
+					let refreshTokenModel = try await RefreshTokenModel.query(on: app.db)
+						.filter(\.$token == "def")
+						.with(\.$refreshes)
+						.with(\.$succeededBy)
+						.withDeleted()
+						.first(),
+					let succeeededBy = refreshTokenModel.succeededBy
+				else {
+					XCTFail("Could not load tokens")
+					return
+				}
+
+				XCTAssertTrue(refreshTokenModel.refreshes.expiresOn <= Date())
+				XCTAssertTrue(succeeededBy.expiresOn <= Date())
+			}
+		}
+	}
+
+	func test__token_post__refreshTokenRequest_tokenIsAlreadyUsed_theRequestedTokenIs2Of3__returnsInvalidGrantError_allAccessTokensAreInvalidated() async throws {
+		try await createAccessToken(code: "abc", refreshToken: "def")
+
+		let firstRefreshToken = "def"
+
+		// Creating token 2
+		try await app.test(.POST, "/auth/token", beforeRequest: { req in
+			try req.content.encode(RefreshTokenRequest(refreshToken: firstRefreshToken))
+		}) { res in
+			let newAccessToken = try res.content.decode(AccessTokenResponse.self)
+			guard let secondRefreshToken = newAccessToken.refreshToken
+			else {
+				XCTFail("Access token response did not include refresh token")
+				return
+			}
+
+			// Creating token 3
+			try await app.test(.POST, "/auth/token", beforeRequest: { req in
+				try req.content.encode(RefreshTokenRequest(refreshToken: secondRefreshToken))
+			}) { res in
+				let accessTokenResponse = try res.content.decode(AccessTokenResponse.self)
+				guard let thirdRefreshToken = accessTokenResponse.refreshToken
+				else {
+					XCTFail("Access token response did not include refresh token")
+					return
+				}
+
+				try await app.test(.POST, "/auth/token", beforeRequest: { req in
+					try req.content.encode(RefreshTokenRequest(refreshToken: thirdRefreshToken))
+				}) { res in
+
+					// Reusing second token
+					try await app.test(.POST, "/auth/token", beforeRequest: { req in
+						try req.content.encode(RefreshTokenRequest(refreshToken: secondRefreshToken))
+					}) { res in
+						XCTAssertEqual(res.status, .badRequest)
+
+						let response = try res.content.decode(ErrorResponse.self)
+
+						XCTAssertEqual(response.code, .invalidGrant)
+
+						guard
+							let firstRefreshTokenModel = try await RefreshTokenModel.query(on: app.db)
+								.filter(\.$token == firstRefreshToken)
+								.with(\.$refreshes)
+								.withDeleted()
+								.first(),
+							let secondRefreshTokenModel = try await RefreshTokenModel.query(on: app.db)
+								.filter(\.$token == secondRefreshToken)
+								.with(\.$refreshes)
+								.withDeleted()
+								.first(),
+							let thirdRefreshTokenModel = try await RefreshTokenModel.query(on: app.db)
+								.filter(\.$token == thirdRefreshToken)
+								.with(\.$refreshes)
+								.with(\.$succeededBy)
+								.withDeleted()
+								.first(),
+							let fourthAccessToken = thirdRefreshTokenModel.succeededBy
+						else {
+							XCTFail("Could not load tokens")
+							return
+						}
+
+						XCTAssertTrue(firstRefreshTokenModel.refreshes.expiresOn <= Date())
+						XCTAssertTrue(secondRefreshTokenModel.refreshes.expiresOn <= Date())
+						XCTAssertTrue(thirdRefreshTokenModel.refreshes.expiresOn <= Date())
+						XCTAssertTrue(fourthAccessToken.expiresOn <= Date())
+						XCTAssertEqual(firstRefreshTokenModel.$succeededBy.id, secondRefreshTokenModel.refreshes.id)
+						XCTAssertEqual(secondRefreshTokenModel.$succeededBy.id, thirdRefreshTokenModel.refreshes.id)
+					}
+				}
+			}
+		}
 	}
 
 	func test__token_post__refreshTokenRequest_tokenIsUnknown__returnsInvalidGrantError() async throws {

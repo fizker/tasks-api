@@ -48,7 +48,7 @@ class AuthController {
 		guard refreshToken.$succeededBy.id == nil
 		else {
 			do {
-				try await invalidateTokenTree(refreshToken)
+				try await invalidateTokenTree(refreshToken, on: db)
 			} catch {
 				#warning("TODO: Log error")
 			}
@@ -70,8 +70,23 @@ class AuthController {
 		return try await .init(newToken, on: db)
 	}
 
-	private func invalidateTokenTree(_ refreshToken: RefreshTokenModel) async throws {
-		try notImplemented()
+	private func invalidateTokenTree(_ refreshToken: RefreshTokenModel, on db: Database) async throws {
+		var refreshToken: RefreshTokenModel? = refreshToken
+
+		while true {
+			guard
+				let id = refreshToken?.$succeededBy.id,
+				let accessToken = try await AccessTokenModel.query(on: db)
+					.filter(\.$id == id)
+					.with(\.$refreshedBy)
+					.first()
+			else { return }
+
+			accessToken.expiresOn = Date()
+			try await accessToken.save(on: db)
+
+			refreshToken = accessToken.refreshedBy
+		}
 	}
 }
 
