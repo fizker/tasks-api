@@ -218,6 +218,32 @@ final class UserControllerTests: XCTestCase {
 		}
 	}
 
+	func test__invite_post__notLoggedIn__returns401() async throws {
+		try app.test(.POST, "/users/invite") { res in
+			XCTAssertEqual(res.status, .unauthorized)
+		}
+	}
+
+	func test__invite_post__loggedIn__inviteCreated_inviteReturned() async throws {
+		let user = UserModel(name: "abc", username: "def", passwordHash: try Bcrypt.hash("ghi"))
+		try await user.create(on: app.db)
+
+		var headers = HTTPHeaders()
+		headers.bearerAuthorization = try await authHeader(for: user, on: app.db)
+
+		try await app.test(.POST, "/users/invite", headers: headers) { res in
+			XCTAssertEqual(res.status, .created)
+
+			let invite = try res.content.decode(UserInvitationDTO.self)
+
+			let inviteModel = try await UserInvitationModel.query(on: app.db)
+				.filter(\.$id == invite.token)
+				.first()
+
+			XCTAssertNotNil(inviteModel)
+		}
+	}
+
 	private func authHeader(for user: UserModel, on db: Database) async throws -> BearerAuthorization {
 		let model = try await createAccessToken(for: user, on: db)
 		return .init(token: model.code)

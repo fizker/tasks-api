@@ -1,5 +1,6 @@
 import Fluent
 import Vapor
+import OAuth2Models
 
 class UserController {
 	func register(req: Request) async throws -> HTTPResponseStatus {
@@ -40,12 +41,24 @@ class UserController {
 		let user = UserModel(name: dto.name, username: dto.username, passwordHash: hash)
 		try await user.create(on: db)
 	}
+
+	func invite(req: Request) async throws -> Response {
+		let expiration = TokenExpiration(days: 10)
+		let invite = UserInvitationModel(validUntil: expiration.date(in: .theFuture))
+		try await invite.create(on: req.db)
+
+		let dto = UserInvitationDTO(token: try invite.requireID())
+
+		return try .init(status: .created, dto: dto)
+	}
 }
 
 extension UserModel: Authenticatable {
 }
 
-	func verify(password: String) throws -> Bool {
-		try Bcrypt.verify(password, created: passwordHash)
+extension Response {
+	convenience init<DTO: Content>(status: HTTPStatus, dto: DTO) throws {
+		self.init(status: status, body: .empty)
+		try content.encode(dto)
 	}
 }

@@ -85,6 +85,7 @@ func routes(_ app: Application) throws {
 		app.post("register", use: u.register(req:))
 
 		let app = app.grouped(EnsureLoggedInMiddleware())
+		app.post("invite", use: u.invite(req:))
 		app.get("self", use: u.get(req:))
 		app.put("self", use: u.update(req:))
 	}
