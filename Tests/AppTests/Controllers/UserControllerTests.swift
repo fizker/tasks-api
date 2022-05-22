@@ -19,13 +19,6 @@ final class UserControllerTests: XCTestCase {
 		XCTAssertEqual(user.name, "Admin")
 		XCTAssertEqual(user.username, "admin")
 		XCTAssertTrue(try Bcrypt.verify("admin", created: user.passwordHash))
-
-		var headers = HTTPHeaders()
-		headers.basicAuthorization = .init(username: "admin", password: "admin")
-
-		try app.test(.GET, "/users/self", headers: headers) { res in
-			XCTAssertEqual(res.status, .ok)
-		}
 	}
 
 	func test__register_post__noMatchingInvitation__throwsNotFound() async throws {
@@ -109,12 +102,24 @@ final class UserControllerTests: XCTestCase {
 		}
 	}
 
-	func test__self_get__loggedIn__returnsUserDTO() async throws {
+	func test__self_get__basicAuth__throwsNotAuthorized() async throws {
 		let user = UserModel(name: "John Doe", username: "foo", passwordHash: try Bcrypt.hash("bar"))
 		try await user.save(on: app.db)
 
 		var headers = HTTPHeaders()
 		headers.basicAuthorization = .init(username: "foo", password: "bar")
+
+		try app.test(.GET, "/users/self", headers: headers) { res in
+			XCTAssertEqual(res.status, .unauthorized)
+		}
+	}
+
+	func test__self_get__loggedIn__returnsUserDTO() async throws {
+		let user = UserModel(name: "John Doe", username: "foo", passwordHash: try Bcrypt.hash("bar"))
+		try await user.save(on: app.db)
+
+		var headers = HTTPHeaders()
+		headers.bearerAuthorization = try await authHeader(for: user, on: app.db)
 
 		let expected = UserDTO(user)
 
@@ -150,7 +155,7 @@ final class UserControllerTests: XCTestCase {
 		try await user.save(on: app.db)
 
 		var headers = HTTPHeaders()
-		headers.basicAuthorization = .init(username: "foo", password: "bar")
+		headers.bearerAuthorization = try await authHeader(for: user, on: app.db)
 
 		try await app.test(.PUT, "/users/self", headers: headers, beforeRequest: { req in
 			try req.content.encode(request)
@@ -181,7 +186,7 @@ final class UserControllerTests: XCTestCase {
 		try await otherUser.save(on: app.db)
 
 		var headers = HTTPHeaders()
-		headers.basicAuthorization = .init(username: "foo", password: "bar")
+		headers.bearerAuthorization = try await authHeader(for: user, on: app.db)
 
 		try await app.test(.PUT, "/users/self", headers: headers, beforeRequest: { req in
 			try req.content.encode(request)
@@ -211,6 +216,18 @@ final class UserControllerTests: XCTestCase {
 			XCTAssertEqual(otherUser.username, "def")
 			XCTAssertTrue(try Bcrypt.verify("ghi", created: otherUser.passwordHash))
 		}
+	}
+
+	private func authHeader(for user: UserModel, on db: Database) async throws -> BearerAuthorization {
+		let model = try await createAccessToken(for: user, on: db)
+		return .init(token: model.code)
+	}
+
+	private func createAccessToken(for user: UserModel, code: String = UUID().uuidString, on db: Database) async throws -> AccessTokenModel {
+		let model = try AccessTokenModel(user: user, code: code, expiresIn: .oneHour)
+		try await model.create(on: db)
+
+		return model
 	}
 
 	private func removeAdminUser() async throws {

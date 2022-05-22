@@ -17,15 +17,21 @@ extension Request {
 
 struct EnsureLoggedInMiddleware: AsyncMiddleware {
 	func respond(to request: Request, chainingTo next: AsyncResponder) async throws -> Response {
-		_ = try request.auth.require(UserModel.self)
+		guard
+			let auth = request.headers.bearerAuthorization,
+			let token = try await AccessTokenModel.query(on: request.db)
+				.filter(\.$code == auth.token)
+				.with(\.$user)
+				.first()
+		else { throw Abort(.unauthorized) }
+
+		request.auth.login(token.user)
 
 		return try await next.respond(to: request)
 	}
 }
 
 func routes(_ app: Application) throws {
-	let app = app.grouped(UserModel.authenticator())
-
 	app.get { req in
 		return "It works!"
 	}

@@ -42,9 +42,8 @@ class UserController {
 	}
 }
 
-extension UserModel: ModelAuthenticatable {
-	static let usernameKey = \UserModel.$username
-	static let passwordHashKey = \UserModel.$passwordHash
+extension UserModel: Authenticatable {
+}
 
 	func verify(password: String) throws -> Bool {
 		try Bcrypt.verify(password, created: passwordHash)
