@@ -14,7 +14,7 @@ class AuthController {
 		case let .passwordAccessToken(request):
 			return try await handle(request: request, on: req.db)
 		case let .refreshToken(request):
-			return try await handle(request: request, on: req.db)
+			return try await handle(request: request, on: req.db, logger: req.logger)
 		}
 	}
 
@@ -37,7 +37,7 @@ class AuthController {
 		return try await .init(accessToken, on: db)
 	}
 
-	private func handle(request: RefreshTokenRequest, on db: Database) async throws -> AccessTokenResponse {
+	private func handle(request: RefreshTokenRequest, on db: Database, logger: Logger) async throws -> AccessTokenResponse {
 		guard let refreshToken = try await RefreshTokenModel.query(on: db)
 			.filter(\.$token == request.refreshToken)
 			.first()
@@ -50,7 +50,7 @@ class AuthController {
 			do {
 				try await invalidateTokenTree(refreshToken, on: db)
 			} catch {
-				#warning("TODO: Log error")
+				logger.report(error: error)
 			}
 			throw ErrorResponse(code: .invalidGrant, description: nil)
 		}
