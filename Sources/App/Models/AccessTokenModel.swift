@@ -17,6 +17,12 @@ final class AccessTokenModel: Model {
 	@Field(key: "expires_on")
 	var expiresOn: Date
 
+	@OptionalChild(for: \.$refreshes)
+	var refreshedBy: RefreshTokenModel?
+
+	@OptionalChild(for: \.$succeededBy)
+	var succeeds: RefreshTokenModel?
+
 	init() {}
 
 	init(id: UUID? = nil, code: String, createdOn: Date = .init(), expiresIn expiration: TokenExpiration) {
@@ -28,12 +34,12 @@ final class AccessTokenModel: Model {
 }
 
 extension AccessTokenResponse {
-	init(_ model: AccessTokenModel) {
+	init(_ model: AccessTokenModel, on db: Database) async throws {
 		self.init(
 			accessToken: model.code,
 			type: .bearer,
 			expiresIn: TokenExpiration(date: model.expiresOn),
-			refreshToken: nil
+			refreshToken: try await model.$refreshedBy.get(on: db)?.token
 		)
 	}
 }
