@@ -8,6 +8,9 @@ final class AccessTokenModel: Model {
 	@ID(key: .id)
 	var id: UUID?
 
+	@Parent(key: "user")
+	var user: UserModel
+
 	@Field(key: "code")
 	var code: String
 
@@ -25,11 +28,16 @@ final class AccessTokenModel: Model {
 
 	init() {}
 
-	init(id: UUID? = nil, code: String, createdOn: Date = .init(), expiresIn expiration: TokenExpiration) {
+	init(id: UUID? = nil, userID: UUID, code: String, createdOn: Date = Date(), expiresIn expiration: TokenExpiration) {
 		self.id = id
+		self.$user.id = userID
 		self.code = code
 		self.createdOn = createdOn
 		self.expiresOn = createdOn.addingTimeInterval(expiration.asTimeInterval)
+	}
+
+	convenience init(id: UUID? = nil, user: UserModel, code: String, createdOn: Date = Date(), expiresIn expiration: TokenExpiration) throws {
+		self.init(id: id, userID: try user.requireID(), code: code, createdOn: createdOn, expiresIn: expiration)
 	}
 }
 

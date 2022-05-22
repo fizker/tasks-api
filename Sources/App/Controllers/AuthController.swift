@@ -28,7 +28,7 @@ class AuthController {
 			throw ErrorResponse(code: .invalidGrant, description: nil)
 		}
 
-		let accessToken = AccessTokenModel(code: UUID().uuidString, expiresIn: .oneHour)
+		let accessToken = try AccessTokenModel(user: user, code: UUID().uuidString, expiresIn: .oneHour)
 		try await accessToken.create(on: db)
 
 		let refreshToken = try RefreshTokenModel(token: UUID().uuidString, refreshes: accessToken)
@@ -59,7 +59,7 @@ class AuthController {
 		oldToken.expiresOn = .now
 		try await oldToken.save(on: db)
 
-		let newToken = AccessTokenModel(code: UUID().uuidString, expiresIn: .oneHour)
+		let newToken = AccessTokenModel(userID: oldToken.$user.id, code: UUID().uuidString, expiresIn: .oneHour)
 		try await newToken.create(on: db)
 		refreshToken.$succeededBy.id = try newToken.requireID()
 		try await refreshToken.save(on: db)

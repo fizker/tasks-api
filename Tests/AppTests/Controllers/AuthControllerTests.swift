@@ -5,10 +5,15 @@ import OAuth2Models
 @testable import App
 
 final class AuthControllerTests: XCTestCase {
+	enum TestError: Error {
+		case userNotFound(String)
+	}
+
 	var app: Application!
 	let controller = UserController()
 
 	func test__token_post__passwordRequest_credentialsAreValid__newAccessTokenIsReturned() async throws {
+		let adminUser = try await adminUser
 		let passwordRequest = PasswordAccessTokenRequest(username: "admin", password: "admin")
 
 		try await app.test(.POST, "/auth/token", beforeRequest: { req in
@@ -29,6 +34,7 @@ final class AuthControllerTests: XCTestCase {
 
 			XCTAssertEqual(response.scope, .init())
 			XCTAssertNotNil(response.refreshToken)
+			XCTAssertEqual(tokenModel.$user.id, adminUser.id)
 			XCTAssertEqual(tokenModel.refreshedBy?.token, response.refreshToken)
 			XCTAssertEqual(response.type, .bearer)
 			XCTAssertEqual(response.expiration?.asTimeInterval ?? 0, 3600, accuracy: 2)
@@ -243,9 +249,21 @@ final class AuthControllerTests: XCTestCase {
 		}
 	}
 
+	private var adminUser: UserModel {
+		get async throws {
+			guard let user = try await UserModel.query(on: app.db)
+				.filter(\.$username == "admin")
+				.first()
+			else { throw TestError.userNotFound("admin") }
+
+			return user
+		}
+	}
+
 	@discardableResult
 	private func createAccessToken(code: String = UUID().uuidString, refreshToken: String = UUID().uuidString) async throws -> AccessTokenResponse {
-		let accessTokenModel = AccessTokenModel(code: code, expiresIn: .oneHour)
+		let user = try await adminUser
+		let accessTokenModel = try AccessTokenModel(user: user, code: code, expiresIn: .oneHour)
 		try await accessTokenModel.create(on: app.db)
 
 		let refreshTokenModel = try RefreshTokenModel(token: refreshToken, refreshes: accessTokenModel)
