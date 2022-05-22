@@ -59,6 +59,10 @@ final class UserControllerTests: XCTestCase {
 		}
 	}
 
+	func test__register_post__matchingInvite_usernameIncludesColon__returnsValidationError() async throws {
+		/*@START_MENU_TOKEN@*/throw XCTSkip("Not implemented")/*@END_MENU_TOKEN@*/
+	}
+
 	func test__register_post__notLoggedIn_matchingInvite_inviteIsExpired__throwsNotFound() async throws {
 		let inviteID = UUID()
 		let request = RegisterUserDTO(token: inviteID, name: "John Doe", username: "foo", password: "bar")
@@ -216,6 +220,10 @@ final class UserControllerTests: XCTestCase {
 			XCTAssertEqual(otherUser.username, "def")
 			XCTAssertTrue(try Bcrypt.verify("ghi", created: otherUser.passwordHash))
 		}
+	}
+
+	func test__self_put__validCredentials_usernameIncludesColon__returnsValidationError() async throws {
+		/*@START_MENU_TOKEN@*/throw XCTSkip("Not implemented")/*@END_MENU_TOKEN@*/
 	}
 
 	func test__invite_post__notLoggedIn__returns401() async throws {
