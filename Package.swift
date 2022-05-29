@@ -7,10 +7,10 @@ let package = Package(
 		.macOS(.v12),
 	],
 	dependencies: [
-		// 💧 A server-side Swift web framework.
-		.package(url: "https://github.com/vapor/vapor.git", from: "4.55.2"),
+		.package(url: "https://github.com/fizker/swift-oauth2-models.git", from: "0.2.1"),
+		.package(url: "https://github.com/vapor/vapor.git", from: "4.57.1"),
 		.package(url: "https://github.com/vapor/fluent.git", from: "4.4.0"),
-		.package(url: "https://github.com/vapor/fluent-postgres-driver.git", from: "2.2.3"),
+		.package(url: "https://github.com/vapor/fluent-postgres-driver.git", from: "2.2.6"),
 		.package(url: "https://github.com/vapor/fluent-sqlite-driver.git", from: "4.1.0"),
 	],
 	targets: [
@@ -20,6 +20,7 @@ let package = Package(
 				.product(name: "Fluent", package: "fluent"),
 				.product(name: "FluentPostgresDriver", package: "fluent-postgres-driver"),
 				.product(name: "FluentSQLiteDriver", package: "fluent-sqlite-driver"),
+				.product(name: "OAuth2Models", package: "swift-oauth2-models"),
 				.product(name: "Vapor", package: "vapor"),
 			],
 			swiftSettings: [

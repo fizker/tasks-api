@@ -179,6 +179,12 @@ final class ProjectControllerTests: XCTestCase {
 		XCTAssertEqual(result, single)
 	}
 
+	func test__projects_get__notLoggedIn__returns401() async throws {
+		try app.test(.GET, "/projects") { req in
+			XCTAssertEqual(req.status, .unauthorized)
+		}
+	}
+
 	private func addProject(id: UUID, tasks: [TaskDTO] = []) async throws {
 		let project = ProjectDTO(
 			id: id,

@@ -15,6 +15,22 @@ extension Request {
 	}
 }
 
+struct EnsureLoggedInMiddleware: AsyncMiddleware {
+	func respond(to request: Request, chainingTo next: AsyncResponder) async throws -> Response {
+		guard
+			let auth = request.headers.bearerAuthorization,
+			let token = try await AccessTokenModel.query(on: request.db)
+				.filter(\.$code == auth.token)
+				.with(\.$user)
+				.first()
+		else { throw Abort(.unauthorized) }
+
+		request.auth.login(token.user)
+
+		return try await next.respond(to: request)
+	}
+}
+
 func routes(_ app: Application) throws {
 	app.get { req in
 		return "It works!"
@@ -24,11 +40,20 @@ func routes(_ app: Application) throws {
 		return "Hello, world!"
 	}
 
+	let auth = AuthController()
 	let p = ProjectController()
 	let t = TaskController()
 	let todo = TodoController()
+	let u = UserController()
 
-	app.group("projects") { app in
+	app.group("auth") { app in
+		app.post("token", use: auth.requestToken(req:))
+	}
+
+
+	app
+	.grouped(EnsureLoggedInMiddleware())
+	.group("projects") { app in
 		app.get(use: p.all(req:))
 		app.post(use: p.create(req:))
 
@@ -49,8 +74,19 @@ func routes(_ app: Application) throws {
 		}
 	}
 
-	app.group("todo") { app in
+	app
+	.grouped(EnsureLoggedInMiddleware())
+	.group("todo") { app in
 		app.get(use: todo.currentItem(req:))
 		app.post(use: todo.moveToNextItem(req:))
+	}
+
+	app.group("users") { app in
+		app.post("register", use: u.register(req:))
+
+		let app = app.grouped(EnsureLoggedInMiddleware())
+		app.post("invite", use: u.invite(req:))
+		app.get("self", use: u.get(req:))
+		app.put("self", use: u.update(req:))
 	}
 }
