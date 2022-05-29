@@ -56,7 +56,7 @@ class AuthController {
 		}
 
 		let oldToken = try await refreshToken.$refreshes.get(on: db)
-		oldToken.expiresOn = .now
+		oldToken.expiresOn = Date()
 		try await oldToken.save(on: db)
 
 		let newToken = AccessTokenModel(userID: oldToken.$user.id, code: UUID().uuidString, expiresIn: .oneHour)
