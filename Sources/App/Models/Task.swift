@@ -55,10 +55,10 @@ extension TaskDTO {
 		task.name = name
 		task.descr = descr
 		task.status = status ?? .notStarted
-		if let project = project {
+		if let project {
 			task.$project.id = project
 		}
-		if let sortOrder = sortOrder {
+		if let sortOrder {
 			task.sortOrder = sortOrder
 		}
 	}

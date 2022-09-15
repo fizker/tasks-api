@@ -36,7 +36,7 @@ extension UserDTO {
 	func copy(onto user: UserModel) throws {
 		user.name = name
 		user.username = username
-		if let password = password {
+		if let password {
 			user.passwordHash = try Bcrypt.hash(password)
 		}
 	}

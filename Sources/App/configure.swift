@@ -29,7 +29,7 @@ public func configure(_ app: Application) throws {
 		if let url = Environment.get("DATABASE_URL") {
 			guard var conf = PostgresConfiguration(url: url)
 			else { throw ConfigurationError.invalidDatabaseURL(url) }
-			if let tlsConfiguration = tlsConfiguration {
+			if let tlsConfiguration {
 				conf.tlsConfiguration = tlsConfiguration
 			}
 
