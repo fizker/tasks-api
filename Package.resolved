@@ -32,8 +32,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/vapor/fluent.git",
       "state" : {
-        "revision" : "ea707ee318066a073c95b2b2df1aa640fcb67f9e",
-        "version" : "4.4.0"
+        "revision" : "26c446002f03c5ab34b20d86873014ef3d92d0da",
+        "version" : "4.5.0"
       }
     },
     {
@@ -41,8 +41,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/vapor/fluent-kit.git",
       "state" : {
-        "revision" : "2d072ce425de02c62b85a8451b8f1b6cf46b9c13",
-        "version" : "1.24.0"
+        "revision" : "38670d2eefcba27530272946d627ac8d4e45f017",
+        "version" : "1.35.1"
       }
     },
     {
@@ -50,8 +50,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/vapor/fluent-postgres-driver.git",
       "state" : {
-        "revision" : "7c266b539f71331ad6e53ea8fae587ccdaf972f2",
-        "version" : "2.2.6"
+        "revision" : "a8b2839ea86c44a35c17f66eb0885f9e5b51a531",
+        "version" : "2.4.0"
       }
     },
     {
@@ -59,8 +59,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/vapor/fluent-sqlite-driver.git",
       "state" : {
-        "revision" : "9ca34be792979fb0f1dbd8e45b8af9f1e1440474",
-        "version" : "4.1.0"
+        "revision" : "9439661820e547abc1807121cb3d3482447239a5",
+        "version" : "4.2.0"
       }
     },
     {
@@ -95,8 +95,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/vapor/routing-kit.git",
       "state" : {
-        "revision" : "5603b81ceb744b8318feab1e60943704977a866b",
-        "version" : "4.3.1"
+        "revision" : "ffac7b3a127ce1e85fb232f1a6271164628809ad",
+        "version" : "4.6.0"
       }
     },
     {
@@ -124,6 +124,15 @@
       "state" : {
         "revision" : "6481dd0b01112d082dd7eb362782126e81964138",
         "version" : "1.1.0"
+      }
+    },
+    {
+      "identity" : "swift-algorithms",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-algorithms.git",
+      "state" : {
+        "revision" : "b14b7f4c528c942f121c8b860b9410b2bf57825e",
+        "version" : "1.0.0"
       }
     },
     {
@@ -208,6 +217,15 @@
       }
     },
     {
+      "identity" : "swift-numerics",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-numerics",
+      "state" : {
+        "revision" : "0a5bc04095a675662cf24757cc0640aa2204253b",
+        "version" : "1.0.2"
+      }
+    },
+    {
       "identity" : "swift-oauth2-models",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/fizker/swift-oauth2-models.git",
@@ -221,8 +239,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/vapor/vapor.git",
       "state" : {
-        "revision" : "a7ada6df7ce6c9045c91015de208fdfe9a04a214",
-        "version" : "4.57.1"
+        "revision" : "dda0de537e7906414dccd551e77095be1e34e3da",
+        "version" : "4.65.2"
       }
     },
     {
