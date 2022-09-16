@@ -1,4 +1,5 @@
-// swift-tools-version:5.5
+// swift-tools-version:5.7
+
 import PackageDescription
 
 let package = Package(
@@ -8,10 +9,10 @@ let package = Package(
 	],
 	dependencies: [
 		.package(url: "https://github.com/fizker/swift-oauth2-models.git", from: "0.2.1"),
-		.package(url: "https://github.com/vapor/vapor.git", from: "4.57.1"),
-		.package(url: "https://github.com/vapor/fluent.git", from: "4.4.0"),
-		.package(url: "https://github.com/vapor/fluent-postgres-driver.git", from: "2.2.6"),
-		.package(url: "https://github.com/vapor/fluent-sqlite-driver.git", from: "4.1.0"),
+		.package(url: "https://github.com/vapor/vapor.git", from: "4.65.2"),
+		.package(url: "https://github.com/vapor/fluent.git", from: "4.5.0"),
+		.package(url: "https://github.com/vapor/fluent-postgres-driver.git", from: "2.4.0"),
+		.package(url: "https://github.com/vapor/fluent-sqlite-driver.git", from: "4.2.0"),
 	],
 	targets: [
 		.target(
